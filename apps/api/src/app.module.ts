@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthController } from './health/health.controller';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 import {
   User,
   Book,
@@ -42,6 +43,7 @@ import {
       Favorite,
     ]),
     UsersModule,
+    AuthModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],

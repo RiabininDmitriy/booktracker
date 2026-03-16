@@ -28,4 +28,9 @@ export class UsersService {
   findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({ where: { email } });
   }
+
+  create(data: Pick<User, 'email' | 'passwordHash' | 'name'>): Promise<User> {
+    const user = this.usersRepository.create(data);
+    return this.usersRepository.save(user);
+  }
 }
