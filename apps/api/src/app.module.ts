@@ -5,6 +5,8 @@ import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthController } from './health/health.controller';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 import {
   User,
   Book,
@@ -24,6 +26,7 @@ import {
           .default('development'),
         PORT: Joi.number().default(3001),
         DATABASE_URL: Joi.string().required(),
+        JWT_SECRET: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRoot({
@@ -40,6 +43,8 @@ import {
       Rating,
       Favorite,
     ]),
+    UsersModule,
+    AuthModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
