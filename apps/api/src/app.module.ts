@@ -26,6 +26,7 @@ import {
           .default('development'),
         PORT: Joi.number().default(3001),
         DATABASE_URL: Joi.string().required(),
+        JWT_SECRET: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRoot({
