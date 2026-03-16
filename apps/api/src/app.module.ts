@@ -5,6 +5,7 @@ import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthController } from './health/health.controller';
+import { UsersModule } from './users/users.module';
 import {
   User,
   Book,
@@ -40,6 +41,7 @@ import {
       Rating,
       Favorite,
     ]),
+    UsersModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
