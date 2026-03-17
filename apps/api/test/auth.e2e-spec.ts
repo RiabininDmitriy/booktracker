@@ -1,6 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { App } from 'supertest/types';
+import { DataSource } from 'typeorm';
 import { createTestApp } from './utils/create-test-app';
 
 function uniqueEmail(prefix = 'e2e'): string {
@@ -115,5 +116,42 @@ describe('Auth (e2e)', () => {
   it('me without token → 401', async () => {
     const agent = request.agent(app.getHttpServer());
     await agent.get('/auth/me').expect(401);
+  });
+
+  it('RBAC: /users is admin-only (403 for user, 200 for admin)', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const dataSource = app.get(DataSource);
+
+    const email = uniqueEmail('rbac');
+    const password = 'password123';
+
+    const registerRes = await agent
+      .post('/auth/register')
+      .send({ email, password, name: 'Test' })
+      .expect(201);
+
+    const registerBody = registerRes.body as AuthResponseBody;
+
+    await agent
+      .get('/users')
+      .set('Authorization', `Bearer ${registerBody.accessToken}`)
+      .expect(403);
+
+    // Promote to admin directly in DB for the test
+    await dataSource.query(`UPDATE users SET role = 'admin' WHERE email = $1`, [
+      email,
+    ]);
+
+    const adminLoginRes = await agent
+      .post('/auth/login')
+      .send({ email, password })
+      .expect(201);
+
+    const adminBody = adminLoginRes.body as AuthResponseBody;
+
+    await agent
+      .get('/users')
+      .set('Authorization', `Bearer ${adminBody.accessToken}`)
+      .expect(200);
   });
 });
