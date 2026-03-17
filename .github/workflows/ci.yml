@@ -9,6 +9,24 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: booktracker
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres -d booktracker"
+          --health-interval=3s
+          --health-timeout=3s
+          --health-retries=10
+    env:
+      NODE_ENV: development
+      JWT_SECRET: ci_jwt_secret
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5433/booktracker
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +53,15 @@ jobs:
 
       - name: Typecheck
         run: pnpm typecheck
+
+      - name: Install Postgres client (for readiness check)
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Wait for Postgres
+        run: pg_isready -h localhost -p 5433 -U postgres -d booktracker
+
+      - name: API e2e tests
+        run: pnpm --filter api test:e2e
 
       - name: Build
         run: pnpm build
