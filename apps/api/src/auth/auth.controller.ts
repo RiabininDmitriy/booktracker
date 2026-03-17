@@ -1,16 +1,21 @@
 import {
   Body,
   Controller,
+  Get,
   Post,
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import type { CookieOptions, Request, Response } from 'express';
-import { User } from '../entities/user.entity';
+import type { User } from '../entities/user.entity';
 import { AuthService, AuthTokens } from './auth.service';
+import type { RequestUser } from './current-user.decorator';
+import { CurrentUser } from './current-user.decorator';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
 const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
@@ -18,6 +23,15 @@ const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  me(@CurrentUser() user: RequestUser | undefined): RequestUser {
+    if (!user) {
+      throw new UnauthorizedException('Missing user context');
+    }
+    return user;
+  }
 
   @Post('register')
   async register(
