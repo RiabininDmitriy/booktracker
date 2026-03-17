@@ -5,14 +5,19 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { UsersService } from '../users/users.service';
-import { RegisterDto } from './dto/register.dto';
-import { LoginDto } from './dto/login.dto';
 import { User } from '../entities/user.entity';
+import { UsersService } from '../users/users.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+}
+
+export interface JwtPayload {
+  sub: string;
+  role: string;
 }
 
 @Injectable()
@@ -38,6 +43,10 @@ export class AuthService {
     });
 
     const tokens = this.issueTokens(user);
+    await this.usersService.setRefreshTokenHash(
+      user.id,
+      await bcrypt.hash(tokens.refreshToken, 10),
+    );
 
     return {
       user,
@@ -62,11 +71,51 @@ export class AuthService {
     }
 
     const tokens = this.issueTokens(user);
+    await this.usersService.setRefreshTokenHash(
+      user.id,
+      await bcrypt.hash(tokens.refreshToken, 10),
+    );
 
     return {
       user,
       ...tokens,
     };
+  }
+
+  async refresh(refreshToken: string): Promise<AuthTokens & { user: User }> {
+    const payload = this.verifyRefreshToken(refreshToken);
+    const user = await this.usersService.findById(payload.sub);
+
+    if (!user.refreshTokenHash) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const isMatch = await bcrypt.compare(refreshToken, user.refreshTokenHash);
+    if (!isMatch) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const tokens = this.issueTokens(user);
+    await this.usersService.setRefreshTokenHash(
+      user.id,
+      await bcrypt.hash(tokens.refreshToken, 10),
+    );
+
+    return {
+      user,
+      ...tokens,
+    };
+  }
+
+  async logout(refreshToken: string | undefined): Promise<void> {
+    if (!refreshToken) return;
+
+    try {
+      const payload = this.verifyRefreshToken(refreshToken);
+      await this.usersService.setRefreshTokenHash(payload.sub, null);
+    } catch {
+      // Ignore invalid/expired refresh tokens on logout
+    }
   }
 
   private issueTokens(user: User): AuthTokens {
@@ -81,5 +130,13 @@ export class AuthService {
     });
 
     return { accessToken, refreshToken };
+  }
+
+  private verifyRefreshToken(token: string): JwtPayload {
+    try {
+      return this.jwtService.verify<JwtPayload>(token);
+    } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
   }
 }

@@ -1,14 +1,14 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Entity,
   OneToMany,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Favorite } from './favorite.entity';
+import { Rating } from './rating.entity';
 import { ReadingStatus } from './reading-status.entity';
 import { Review } from './review.entity';
-import { Rating } from './rating.entity';
-import { Favorite } from './favorite.entity';
 
 @Entity('books')
 export class Book {

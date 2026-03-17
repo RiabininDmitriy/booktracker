@@ -1,14 +1,14 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  Entity,
   OneToMany,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Favorite } from './favorite.entity';
+import { Rating } from './rating.entity';
 import { ReadingStatus } from './reading-status.entity';
 import { Review } from './review.entity';
-import { Rating } from './rating.entity';
-import { Favorite } from './favorite.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -25,6 +25,14 @@ export class User {
 
   @Column({ name: 'password_hash' })
   passwordHash: string;
+
+  @Column({
+    name: 'refresh_token_hash',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  refreshTokenHash: string | null;
 
   @Column({ type: 'varchar', nullable: true })
   name: string | null;
