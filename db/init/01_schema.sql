@@ -10,6 +10,7 @@ CREATE TABLE users (
   id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email        VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
+  refresh_token_hash VARCHAR(255),
   name         VARCHAR(255),
   role         user_role NOT NULL DEFAULT 'user',
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()

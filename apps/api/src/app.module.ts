@@ -4,17 +4,17 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { HealthController } from './health/health.controller';
-import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import {
-  User,
   Book,
+  Favorite,
+  Rating,
   ReadingStatus,
   Review,
-  Rating,
-  Favorite,
+  User,
 } from './entities';
+import { HealthController } from './health/health.controller';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [

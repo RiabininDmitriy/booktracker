@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import type { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { UserNotFoundException } from './exceptions/user-not-found.exception';
 
@@ -32,5 +32,12 @@ export class UsersService {
   create(data: Pick<User, 'email' | 'passwordHash' | 'name'>): Promise<User> {
     const user = this.usersRepository.create(data);
     return this.usersRepository.save(user);
+  }
+
+  async setRefreshTokenHash(
+    userId: string,
+    refreshTokenHash: string | null,
+  ): Promise<void> {
+    await this.usersRepository.update({ id: userId }, { refreshTokenHash });
   }
 }
