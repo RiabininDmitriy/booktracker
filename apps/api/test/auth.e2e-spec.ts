@@ -10,7 +10,6 @@ function uniqueEmail(prefix = 'e2e'): string {
 
 interface AuthResponseBody {
   accessToken: string;
-  refreshToken: string;
   user: {
     email: string;
   };
@@ -43,7 +42,13 @@ describe('Auth (e2e)', () => {
       user: { email },
     });
     expect(typeof registerBody.accessToken).toBe('string');
-    expect(typeof registerBody.refreshToken).toBe('string');
+    expect(registerBody).not.toHaveProperty('refreshToken');
+    expect(registerRes.headers['set-cookie']).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('refresh_token='),
+        expect.stringContaining('HttpOnly'),
+      ]),
+    );
 
     const meRes = await agent
       .get('/auth/me')
@@ -104,7 +109,10 @@ describe('Auth (e2e)', () => {
       .expect(201);
 
     const registerBody = registerRes.body as AuthResponseBody;
-    expect(typeof registerBody.refreshToken).toBe('string');
+    expect(registerBody).not.toHaveProperty('refreshToken');
+    expect(registerRes.headers['set-cookie']).toEqual(
+      expect.arrayContaining([expect.stringContaining('refresh_token=')]),
+    );
 
     await agent.post('/auth/refresh').expect(201);
 
