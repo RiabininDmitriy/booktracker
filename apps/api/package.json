@@ -20,10 +20,11 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "typecheck": "tsc --noEmit",
-    "typeorm": "typeorm-ts-node-commonjs -r tsconfig-paths/register",
-    "migration:generate": "typeorm-ts-node-commonjs -r tsconfig-paths/register migration:generate -d src/database/data-source.ts",
-    "migration:run": "typeorm-ts-node-commonjs -r tsconfig-paths/register migration:run -d src/database/data-source.ts",
-    "migration:revert": "typeorm-ts-node-commonjs -r tsconfig-paths/register migration:revert -d src/database/data-source.ts"
+    "typeorm": "DOTENV_CONFIG_PATH=.env node -r dotenv/config -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+    "migration:generate": "DOTENV_CONFIG_PATH=.env node -r dotenv/config -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:generate -d src/database/data-source.ts",
+    "migration:run": "DOTENV_CONFIG_PATH=.env node -r dotenv/config -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
+    "migration:revert": "DOTENV_CONFIG_PATH=.env node -r dotenv/config -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts",
+    "migration:show": "DOTENV_CONFIG_PATH=.env node -r dotenv/config -r ts-node/register -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:show -d src/database/data-source.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -37,6 +38,7 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
     "cookie-parser": "^1.4.7",
+    "dotenv": "^17.3.1",
     "joi": "^18.0.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",

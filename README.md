@@ -98,6 +98,13 @@ API-only:
 ```bash
 pnpm --filter api test:e2e
 pnpm --filter api migration:run
+pnpm --filter api migration:show
+```
+
+Generate a new migration:
+
+```bash
+pnpm --filter api migration:generate -- src/database/migrations/AddBooksIndexes
 ```
 
 ## 7) Common issues
@@ -122,3 +129,10 @@ Create/update `apps/api/.env` with both values (see step 3).
 - Ensure Docker is running.
 - Ensure container is up: `docker compose ps`
 - Ensure `DATABASE_URL` uses port `5433`.
+
+### Migration command hangs
+
+- Use project scripts, not `npx` directly.
+- In this repo migrations are configured to run via:
+  - `node -r dotenv/config -r ts-node/register -r tsconfig-paths/register`
+- This ensures `apps/api/.env` is loaded and TypeORM reads `src/database/data-source.ts` correctly.
