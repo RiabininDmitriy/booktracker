@@ -15,6 +15,12 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export interface AuthResult {
+  user: User;
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface JwtPayload {
   sub: string;
   role: string;
@@ -27,7 +33,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register(dto: RegisterDto): Promise<AuthTokens & { user: User }> {
+  async register(dto: RegisterDto): Promise<AuthResult> {
     const existing = await this.usersService.findByEmail(dto.email);
 
     if (existing) {
@@ -48,13 +54,10 @@ export class AuthService {
       await bcrypt.hash(tokens.refreshToken, 10),
     );
 
-    return {
-      user,
-      ...tokens,
-    };
+    return { user, ...tokens };
   }
 
-  async login(dto: LoginDto): Promise<AuthTokens & { user: User }> {
+  async login(dto: LoginDto): Promise<AuthResult> {
     const user = await this.usersService.findByEmail(dto.email);
 
     if (!user) {
@@ -76,13 +79,10 @@ export class AuthService {
       await bcrypt.hash(tokens.refreshToken, 10),
     );
 
-    return {
-      user,
-      ...tokens,
-    };
+    return { user, ...tokens };
   }
 
-  async refresh(refreshToken: string): Promise<AuthTokens & { user: User }> {
+  async refresh(refreshToken: string): Promise<AuthResult> {
     const payload = this.verifyRefreshToken(refreshToken);
     const user = await this.usersService.findById(payload.sub);
 
@@ -101,10 +101,7 @@ export class AuthService {
       await bcrypt.hash(tokens.refreshToken, 10),
     );
 
-    return {
-      user,
-      ...tokens,
-    };
+    return { user, ...tokens };
   }
 
   async logout(refreshToken: string | undefined): Promise<void> {

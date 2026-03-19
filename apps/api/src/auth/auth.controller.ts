@@ -9,10 +9,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import type { CookieOptions, Request, Response } from 'express';
-import type { User } from '../entities/user.entity';
-import { AuthService, AuthTokens } from './auth.service';
+import { AuthService } from './auth.service';
 import type { RequestUser } from './current-user.decorator';
 import { CurrentUser } from './current-user.decorator';
+import { AuthResponseDto } from './dto/auth-response.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -38,10 +38,10 @@ export class AuthController {
     @Body() dto: RegisterDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthTokens & { user: User }> {
+  ): Promise<AuthResponseDto> {
     const result = await this.authService.register(dto);
     this.setRefreshCookie(res, req, result.refreshToken);
-    return result;
+    return this.toAuthResponse(result.accessToken, result.user);
   }
 
   @Post('login')
@@ -49,17 +49,17 @@ export class AuthController {
     @Body() dto: LoginDto,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthTokens & { user: User }> {
+  ): Promise<AuthResponseDto> {
     const result = await this.authService.login(dto);
     this.setRefreshCookie(res, req, result.refreshToken);
-    return result;
+    return this.toAuthResponse(result.accessToken, result.user);
   }
 
   @Post('refresh')
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthTokens & { user: User }> {
+  ): Promise<AuthResponseDto> {
     const refreshToken = (req.cookies as Record<string, string> | undefined)?.[
       REFRESH_COOKIE_NAME
     ];
@@ -69,7 +69,7 @@ export class AuthController {
 
     const result = await this.authService.refresh(refreshToken);
     this.setRefreshCookie(res, req, result.refreshToken);
-    return result;
+    return this.toAuthResponse(result.accessToken, result.user);
   }
 
   @Post('logout')
@@ -105,6 +105,22 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: REFRESH_COOKIE_MAX_AGE_MS,
       path: '/auth',
+    };
+  }
+
+  private toAuthResponse(
+    accessToken: string,
+    user: RequestUser,
+  ): AuthResponseDto {
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        createdAt: user.createdAt,
+      },
     };
   }
 }
