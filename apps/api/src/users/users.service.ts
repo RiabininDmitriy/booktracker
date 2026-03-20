@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { UserNotFoundException } from './exceptions/user-not-found.exception';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -29,7 +30,7 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { email } });
   }
 
-  create(data: Pick<User, 'email' | 'passwordHash' | 'name'>): Promise<User> {
+  create(data: CreateUserDto): Promise<User> {
     const user = this.usersRepository.create(data);
     return this.usersRepository.save(user);
   }

@@ -14,50 +14,114 @@ type ErrorDetails =
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
+    const { response, timestamp, path } = this.getHttpContextAndMeta(host);
+
+    if (exception instanceof HttpException) {
+      const payload = this.buildHttpExceptionPayload(
+        exception,
+        timestamp,
+        path,
+      );
+      response.status(payload.statusCode).json(payload);
+      return;
+    }
+
+    response
+      .status(HttpStatus.INTERNAL_SERVER_ERROR)
+      .json(this.buildInternalServerErrorPayload(timestamp, path));
+  }
+
+  private getHttpContextAndMeta(host: ArgumentsHost): {
+    response: Response;
+    timestamp: string;
+    path: string;
+  } {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const timestamp = new Date().toISOString();
-    const path = request.url;
+    return {
+      response,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+    };
+  }
 
-    if (exception instanceof HttpException) {
-      const statusCode = exception.getStatus();
-      const error = HttpStatus[statusCode] ?? 'Error';
-      const resBody = exception.getResponse();
+  private buildHttpExceptionPayload(
+    exception: HttpException,
+    timestamp: string,
+    path: string,
+  ): {
+    statusCode: number;
+    error: string;
+    message: string;
+    details?: ErrorDetails[];
+    path: string;
+    timestamp: string;
+  } {
+    const statusCode = exception.getStatus();
+    const error = HttpStatus[statusCode] ?? 'Error';
+    const resBody = exception.getResponse();
 
-      const normalized =
-        typeof resBody === 'string'
-          ? { message: resBody }
-          : (resBody as Record<string, unknown>);
+    const normalized = this.normalizeExceptionResponse(resBody);
+    const message = this.buildHttpExceptionMessage({
+      normalized,
+      statusCode,
+      error,
+    });
+    const details = this.extractDetails(normalized);
 
-      const message =
-        typeof normalized.message === 'string'
-          ? normalized.message
-          : statusCode === 400
-            ? 'Validation failed'
-            : error;
+    return {
+      statusCode,
+      error,
+      message,
+      ...(details ? { details } : {}),
+      path,
+      timestamp,
+    };
+  }
 
-      const details = this.extractDetails(normalized);
+  private normalizeExceptionResponse(
+    resBody: unknown,
+  ): Record<string, unknown> {
+    if (typeof resBody === 'string') return { message: resBody };
+    if (!resBody || typeof resBody !== 'object') return {};
+    return resBody as Record<string, unknown>;
+  }
 
-      response.status(statusCode).json({
-        statusCode,
-        error,
-        message,
-        ...(details ? { details } : {}),
-        path,
-        timestamp,
-      });
-      return;
-    }
+  private buildHttpExceptionMessage({
+    normalized,
+    statusCode,
+    error,
+  }: {
+    normalized: Record<string, unknown>;
+    statusCode: number;
+    error: string;
+  }): string {
+    if (typeof normalized.message === 'string') return normalized.message;
 
-    response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+    if (statusCode === 400) return 'Validation failed';
+
+    return error;
+  }
+
+  private buildInternalServerErrorPayload(
+    timestamp: string,
+    path: string,
+  ): {
+    statusCode: number;
+    error: string;
+    message: string;
+    path: string;
+    timestamp: string;
+  } {
+    return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       error: 'Internal Server Error',
       message: 'Internal server error',
       path,
       timestamp,
-    });
+    };
   }
 
   private extractDetails(

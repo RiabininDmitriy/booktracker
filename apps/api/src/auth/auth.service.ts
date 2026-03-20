@@ -21,10 +21,9 @@ export interface AuthResult {
   refreshToken: string;
 }
 
-export interface JwtPayload {
+type RefreshTokenPayload = {
   sub: string;
-  role: string;
-}
+};
 
 @Injectable()
 export class AuthService {
@@ -83,8 +82,8 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string): Promise<AuthResult> {
-    const payload = this.verifyRefreshToken(refreshToken);
-    const user = await this.usersService.findById(payload.sub);
+    const userId = this.verifyRefreshToken(refreshToken);
+    const user = await this.usersService.findById(userId);
 
     if (!user.refreshTokenHash) {
       throw new UnauthorizedException('Invalid refresh token');
@@ -108,8 +107,8 @@ export class AuthService {
     if (!refreshToken) return;
 
     try {
-      const payload = this.verifyRefreshToken(refreshToken);
-      await this.usersService.setRefreshTokenHash(payload.sub, null);
+      const userId = this.verifyRefreshToken(refreshToken);
+      await this.usersService.setRefreshTokenHash(userId, null);
     } catch {
       // Ignore invalid/expired refresh tokens on logout
     }
@@ -129,9 +128,10 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private verifyRefreshToken(token: string): JwtPayload {
+  private verifyRefreshToken(token: string): string {
     try {
-      return this.jwtService.verify<JwtPayload>(token);
+      const payload = this.jwtService.verify<RefreshTokenPayload>(token);
+      return payload.sub;
     } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
