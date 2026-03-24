@@ -6,6 +6,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Book } from '../entities/book.entity';
 import { BookSearchResultDto } from './dto/book-search-result.dto';
+import {
+  BooksCatalogResponseDto,
+  BooksCatalogItemDto,
+} from './dto/books-catalog-item.dto';
+import { ListBooksDto } from './dto/list-books.dto';
 
 type OpenLibrarySearchDoc = {
   key?: string;
@@ -30,6 +35,50 @@ export class BooksService {
     @InjectRepository(Book)
     private readonly booksRepository: Repository<Book>,
   ) {}
+
+  async list(query: ListBooksDto): Promise<BooksCatalogResponseDto> {
+    const { page, limit, q, author } = query;
+    const offset = (page - 1) * limit;
+    const sortMap = {
+      rating: 'book.avgRating',
+      createdAt: 'book.createdAt',
+      title: 'book.title',
+    } as const;
+    const sortField = sortMap[query.sort ?? 'createdAt'];
+    const sortOrder = (query.order ?? 'desc').toUpperCase() as 'ASC' | 'DESC';
+
+    const qb = this.booksRepository.createQueryBuilder('book');
+
+    if (q) {
+      qb.andWhere('(book.title ILIKE :q OR book.author ILIKE :q)', {
+        q: `%${q}%`,
+      });
+    }
+
+    if (author) {
+      qb.andWhere('book.author ILIKE :author', {
+        author: `%${author}%`,
+      });
+    }
+
+    if (sortField === 'book.avgRating') {
+      qb.orderBy(sortField, sortOrder, 'NULLS LAST');
+    } else {
+      qb.orderBy(sortField, sortOrder);
+    }
+
+    qb.skip(offset).take(limit);
+
+    const [books, total] = await qb.getManyAndCount();
+
+    return {
+      items: books.map((book) => this.toCatalogItem(book)),
+      page,
+      limit,
+      total,
+      totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+    };
+  }
 
   async search(query: string): Promise<BookSearchResultDto[]> {
     try {
@@ -103,5 +152,18 @@ export class BooksService {
     );
 
     await this.booksRepository.save(entities);
+  }
+
+  private toCatalogItem(book: Book): BooksCatalogItemDto {
+    return {
+      id: book.id,
+      externalId: book.externalId,
+      title: book.title,
+      author: book.author,
+      coverUrl: book.coverUrl,
+      avgRating: book.avgRating,
+      reviewCount: book.reviewCount,
+      createdAt: book.createdAt,
+    };
   }
 }
