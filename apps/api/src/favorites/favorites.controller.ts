@@ -1,5 +1,4 @@
 import {
-  Body,
   Controller,
   Param,
   ParseUUIDPipe,
@@ -10,27 +9,25 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RatingResponseDto } from './dto/rating-response.dto';
-import { UpsertRatingDto } from './dto/upsert-rating.dto';
-import { RatingsService } from './ratings.service';
+import { FavoriteToggleResponseDto } from './dto/favorite-toggle-response.dto';
+import { FavoritesService } from './favorites.service';
 
-@ApiTags('ratings')
+@ApiTags('favorites')
 @ApiBearerAuth()
-@Controller('ratings')
+@Controller('favorites')
 @UseGuards(JwtAuthGuard)
-export class RatingsController {
-  constructor(private readonly ratingsService: RatingsService) {}
+export class FavoritesController {
+  constructor(private readonly favoritesService: FavoritesService) {}
 
-  @Put(':bookId')
-  upsert(
+  @Put(':bookId/toggle')
+  toggle(
     @Param('bookId', new ParseUUIDPipe()) bookId: string,
-    @Body() dto: UpsertRatingDto,
     @CurrentUser() user: RequestUser | undefined,
-  ): Promise<RatingResponseDto> {
+  ): Promise<FavoriteToggleResponseDto> {
     if (!user) {
       throw new UnauthorizedException('Missing user context');
     }
 
-    return this.ratingsService.upsert(user.id, bookId, dto.value);
+    return this.favoritesService.toggle(user.id, bookId);
   }
 }

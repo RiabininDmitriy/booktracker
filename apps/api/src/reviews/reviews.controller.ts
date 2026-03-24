@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ReviewResponseDto } from './dto/review-response.dto';
@@ -17,6 +18,7 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewsService } from './reviews.service';
 
+@ApiTags('reviews')
 @Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
@@ -29,6 +31,7 @@ export class ReviewsController {
   }
 
   @Post(':bookId')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   create(
     @Param('bookId', new ParseUUIDPipe()) bookId: string,
@@ -42,6 +45,7 @@ export class ReviewsController {
   }
 
   @Patch(':reviewId')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   update(
     @Param('reviewId', new ParseUUIDPipe()) reviewId: string,
@@ -55,6 +59,7 @@ export class ReviewsController {
   }
 
   @Delete(':reviewId')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   remove(
     @Param('reviewId', new ParseUUIDPipe()) reviewId: string,

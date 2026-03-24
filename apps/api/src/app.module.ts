@@ -14,6 +14,7 @@ import {
   Review,
   User,
 } from './entities';
+import { FavoritesModule } from './favorites/favorites.module';
 import { HealthController } from './health/health.controller';
 import { ReadingStatusesModule } from './reading-statuses/reading-statuses.module';
 import { RatingsModule } from './ratings/ratings.module';
@@ -53,6 +54,7 @@ import { UsersModule } from './users/users.module';
     ReadingStatusesModule,
     ReviewsModule,
     RatingsModule,
+    FavoritesModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
