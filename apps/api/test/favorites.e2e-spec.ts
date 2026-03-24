@@ -66,4 +66,28 @@ describe('Favorites (e2e)', () => {
     )) as unknown as CountRow[];
     expect(countRows[0].count).toBe(0);
   });
+
+  it('returns 401 without token', async () => {
+    await request(app.getHttpServer())
+      .put('/favorites/11111111-1111-1111-1111-111111111111/toggle')
+      .expect(401);
+  });
+
+  it('returns 404 when book does not exist', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const register = await agent
+      .post('/auth/register')
+      .send({
+        email: uniqueEmail('favorite-missing-book'),
+        password: 'password123',
+        name: 'Favorite Missing Book',
+      })
+      .expect(201);
+    const token = (register.body as RegisterBody).accessToken;
+
+    await agent
+      .put('/favorites/11111111-1111-1111-1111-111111111111/toggle')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
+  });
 });
