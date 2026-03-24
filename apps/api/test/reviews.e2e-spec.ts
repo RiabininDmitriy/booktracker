@@ -110,4 +110,50 @@ describe('Reviews (e2e)', () => {
     )) as unknown as CountRow[];
     expect(countRows[0].count).toBe(0);
   });
+
+  it('returns 401 for protected review routes without token', async () => {
+    await request(app.getHttpServer())
+      .post('/reviews/11111111-1111-1111-1111-111111111111')
+      .send({ text: 'no token' })
+      .expect(401);
+
+    await request(app.getHttpServer())
+      .patch('/reviews/11111111-1111-1111-1111-111111111111')
+      .send({ text: 'no token' })
+      .expect(401);
+
+    await request(app.getHttpServer())
+      .delete('/reviews/11111111-1111-1111-1111-111111111111')
+      .expect(401);
+  });
+
+  it('returns 404 for missing book or review', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const register = await agent
+      .post('/auth/register')
+      .send({
+        email: uniqueEmail('reviews-404'),
+        password: 'password123',
+        name: 'Reviews 404',
+      })
+      .expect(201);
+    const token = (register.body as RegisterBody).accessToken;
+
+    await agent
+      .post('/reviews/11111111-1111-1111-1111-111111111111')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ text: 'missing book' })
+      .expect(404);
+
+    await agent
+      .patch('/reviews/11111111-1111-1111-1111-111111111111')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ text: 'missing review' })
+      .expect(404);
+
+    await agent
+      .delete('/reviews/11111111-1111-1111-1111-111111111111')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
+  });
 });

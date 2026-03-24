@@ -94,4 +94,58 @@ describe('Reading statuses (e2e)', () => {
       .send({ status: 'planned' })
       .expect(401);
   });
+
+  it('returns 404 when book does not exist', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const registerRes = await agent
+      .post('/auth/register')
+      .send({
+        email: uniqueEmail('rs-missing-book'),
+        password: 'password123',
+        name: 'RS Missing Book',
+      })
+      .expect(201);
+    const accessToken = (registerRes.body as { accessToken: string })
+      .accessToken;
+
+    await agent
+      .put('/reading-statuses/11111111-1111-1111-1111-111111111111')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ status: 'planned' })
+      .expect(404);
+  });
+
+  it('returns 400 for invalid status value', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const registerRes = await agent
+      .post('/auth/register')
+      .send({
+        email: uniqueEmail('rs-invalid-status'),
+        password: 'password123',
+        name: 'RS Invalid Status',
+      })
+      .expect(201);
+    const accessToken = (registerRes.body as { accessToken: string })
+      .accessToken;
+
+    const insertedBooks = (await dataSource.query(
+      `INSERT INTO books (external_id, title, author, cover_url, description)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id`,
+      [
+        `e2e-reading-status-invalid-${Date.now()}`,
+        'E2E Invalid Status Book',
+        'E2E Author',
+        null,
+        null,
+      ],
+    )) as unknown as InsertedBookRow[];
+    const book = insertedBooks[0];
+
+    await agent
+      .put(`/reading-statuses/${book.id}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ status: 'invalid-status' })
+      .expect(400);
+  });
 });

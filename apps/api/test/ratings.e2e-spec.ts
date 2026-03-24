@@ -82,4 +82,56 @@ describe('Ratings (e2e)', () => {
       .send({ value: 5 })
       .expect(401);
   });
+
+  it('returns 400 for rating value outside 1..5', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const register = await agent
+      .post('/auth/register')
+      .send({
+        email: uniqueEmail('rating-invalid'),
+        password: 'password123',
+        name: 'Rating Invalid',
+      })
+      .expect(201);
+    const token = (register.body as RegisterBody).accessToken;
+
+    const insertedBooks = (await dataSource.query(
+      `INSERT INTO books (external_id, title, author, cover_url, description)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id`,
+      [
+        `e2e-rating-invalid-${Date.now()}`,
+        'Rated Book Invalid',
+        'Author',
+        null,
+        null,
+      ],
+    )) as unknown as InsertedBookRow[];
+    const bookId = insertedBooks[0].id;
+
+    await agent
+      .put(`/ratings/${bookId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ value: 10 })
+      .expect(400);
+  });
+
+  it('returns 404 when book does not exist', async () => {
+    const agent = request.agent(app.getHttpServer());
+    const register = await agent
+      .post('/auth/register')
+      .send({
+        email: uniqueEmail('rating-missing-book'),
+        password: 'password123',
+        name: 'Rating Missing Book',
+      })
+      .expect(201);
+    const token = (register.body as RegisterBody).accessToken;
+
+    await agent
+      .put('/ratings/11111111-1111-1111-1111-111111111111')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ value: 4 })
+      .expect(404);
+  });
 });
