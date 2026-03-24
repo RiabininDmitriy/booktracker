@@ -2,6 +2,9 @@ import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
 import { firstValueFrom } from 'rxjs';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { Book } from '../entities/book.entity';
 import { BookSearchResultDto } from './dto/book-search-result.dto';
 
 type OpenLibrarySearchDoc = {
@@ -22,7 +25,11 @@ export class BooksService {
   private static readonly OPEN_LIBRARY_SEARCH_URL =
     'https://openlibrary.org/search.json';
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    @InjectRepository(Book)
+    private readonly booksRepository: Repository<Book>,
+  ) {}
 
   async search(query: string): Promise<BookSearchResultDto[]> {
     try {
@@ -38,9 +45,13 @@ export class BooksService {
         ),
       );
 
-      return (data.docs ?? [])
+      const results = (data.docs ?? [])
         .filter((doc) => doc.key && doc.title)
         .map((doc) => this.mapOpenLibraryDoc(doc));
+
+      await this.cacheBooks(results);
+
+      return results;
     } catch (error) {
       const axiosError = error as AxiosError<unknown>;
       this.logger.error('OpenLibrary request failed', axiosError.message);
@@ -63,5 +74,34 @@ export class BooksService {
   private normalizeExternalId(key: string | undefined): string {
     if (!key) return '';
     return key.replace('/works/', '');
+  }
+
+  private async cacheBooks(books: BookSearchResultDto[]): Promise<void> {
+    const externalIds = [...new Set(books.map((book) => book.externalId))];
+    if (externalIds.length === 0) return;
+
+    const existingBooks = await this.booksRepository.findBy({
+      externalId: In(externalIds),
+    });
+    const existingExternalIds = new Set(
+      existingBooks.map((book) => book.externalId),
+    );
+
+    const missingBooks = books.filter(
+      (book) => !existingExternalIds.has(book.externalId),
+    );
+    if (missingBooks.length === 0) return;
+
+    const entities = missingBooks.map((book) =>
+      this.booksRepository.create({
+        externalId: book.externalId,
+        title: book.title,
+        author: book.author,
+        coverUrl: book.coverUrl,
+        description: null,
+      }),
+    );
+
+    await this.booksRepository.save(entities);
   }
 }
