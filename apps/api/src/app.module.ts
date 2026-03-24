@@ -16,6 +16,8 @@ import {
 } from './entities';
 import { HealthController } from './health/health.controller';
 import { ReadingStatusesModule } from './reading-statuses/reading-statuses.module';
+import { RatingsModule } from './ratings/ratings.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -49,6 +51,8 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     BooksModule,
     ReadingStatusesModule,
+    ReviewsModule,
+    RatingsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
