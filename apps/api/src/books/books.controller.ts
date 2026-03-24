@@ -1,10 +1,12 @@
 import { Controller, Get, Query } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { BooksService } from './books.service';
 import { BookSearchResultDto } from './dto/book-search-result.dto';
 import { BooksCatalogResponseDto } from './dto/books-catalog-item.dto';
 import { ListBooksDto } from './dto/list-books.dto';
 import { SearchBooksDto } from './dto/search-books.dto';
 
+@ApiTags('books')
 @Controller('books')
 export class BooksController {
   constructor(private readonly booksService: BooksService) {}
