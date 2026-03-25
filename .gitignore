@@ -29,3 +29,14 @@ node_modules/
 
 # OS specific
 .DS_Store
+
+# Agent/task markdown (local workflow notes)
+AGENTS.md
+TASKS.md
+BOOKS_TICKETS.md
+
+# Cursor (keep shared config/skills, ignore the rest)
+.cursor/*
+!.cursor/settings.json
+!.cursor/skills/
+!.cursor/skills/**
