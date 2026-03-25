@@ -34,9 +34,5 @@ node_modules/
 AGENTS.md
 TASKS.md
 BOOKS_TICKETS.md
-
-# Cursor (keep shared config/skills, ignore the rest)
 .cursor/*
 !.cursor/settings.json
-!.cursor/skills/
-!.cursor/skills/**
