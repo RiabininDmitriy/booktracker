@@ -4,26 +4,27 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import type { AxiosResponse } from 'axios';
 import { of, throwError } from 'rxjs';
-import { Book } from '../entities/book.entity';
-import { BooksService } from './books.service';
+import { Book } from '../../src/entities/book.entity';
+import { BooksRepository } from '../../src/books/books.repository';
+import { BooksService } from '../../src/books/books.service';
 
 describe('BooksService', () => {
   let service: BooksService;
   let httpService: { get: jest.Mock };
+  let booksCatalogRepository: { findCatalogBooks: jest.Mock };
   let booksRepository: {
-    findBy: jest.Mock;
-    create: jest.Mock;
-    save: jest.Mock;
+    upsert: jest.Mock;
   };
 
   beforeEach(async () => {
     httpService = {
       get: jest.fn(),
     };
+    booksCatalogRepository = {
+      findCatalogBooks: jest.fn(),
+    };
     booksRepository = {
-      findBy: jest.fn(),
-      create: jest.fn((data: unknown) => data),
-      save: jest.fn(),
+      upsert: jest.fn(),
     };
 
     const testingModule: TestingModule = await Test.createTestingModule({
@@ -32,6 +33,10 @@ describe('BooksService', () => {
         {
           provide: HttpService,
           useValue: httpService,
+        },
+        {
+          provide: BooksRepository,
+          useValue: booksCatalogRepository,
         },
         {
           provide: getRepositoryToken(Book),
@@ -63,8 +68,7 @@ describe('BooksService', () => {
     };
 
     httpService.get.mockReturnValue(of(axiosResponse));
-    booksRepository.findBy.mockResolvedValue([]);
-    booksRepository.save.mockResolvedValue([]);
+    booksRepository.upsert.mockResolvedValue(undefined);
 
     const result = await service.search('harry potter');
 
@@ -77,7 +81,7 @@ describe('BooksService', () => {
         firstPublishYear: 1997,
       },
     ]);
-    expect(booksRepository.save).toHaveBeenCalledTimes(1);
+    expect(booksRepository.upsert).toHaveBeenCalledTimes(1);
   });
 
   it('returns empty array when docs are missing', async () => {
@@ -90,12 +94,11 @@ describe('BooksService', () => {
     };
 
     httpService.get.mockReturnValue(of(axiosResponse));
-    booksRepository.findBy.mockResolvedValue([]);
 
     const result = await service.search('harry potter');
 
     expect(result).toEqual([]);
-    expect(booksRepository.save).not.toHaveBeenCalled();
+    expect(booksRepository.upsert).not.toHaveBeenCalled();
   });
 
   it('throws BadGatewayException when OpenLibrary fails', async () => {
@@ -108,7 +111,7 @@ describe('BooksService', () => {
     );
   });
 
-  it('does not save books that are already cached', async () => {
+  it('upserts books by externalId for idempotent local persistence', async () => {
     const axiosResponse: AxiosResponse = {
       data: {
         docs: [
@@ -128,10 +131,24 @@ describe('BooksService', () => {
     };
 
     httpService.get.mockReturnValue(of(axiosResponse));
-    booksRepository.findBy.mockResolvedValue([{ externalId: 'OL82563W' }]);
+    booksRepository.upsert.mockResolvedValue(undefined);
 
     await service.search('harry potter');
 
-    expect(booksRepository.save).not.toHaveBeenCalled();
+    expect(booksRepository.upsert).toHaveBeenCalledWith(
+      [
+        {
+          externalId: 'OL82563W',
+          title: "Harry Potter and the Philosopher's Stone",
+          author: 'J. K. Rowling',
+          coverUrl: 'https://covers.openlibrary.org/b/id/15155833-L.jpg',
+          description: null,
+        },
+      ],
+      {
+        conflictPaths: ['externalId'],
+        skipUpdateIfNoValuesChanged: true,
+      },
+    );
   });
 });

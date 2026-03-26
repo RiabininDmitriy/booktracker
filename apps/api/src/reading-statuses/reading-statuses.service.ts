@@ -1,44 +1,34 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Book } from '../entities/book.entity';
-import { ReadingStatus } from '../entities/reading-status.entity';
 import { ReadingStatusEnum } from '../entities/reading-status.entity';
 import { ReadingStatusResponseDto } from './dto/reading-status-response.dto';
+import { ReadingStatusesRepository } from './reading-statuses.repository';
 
 @Injectable()
 export class ReadingStatusesService {
   constructor(
-    @InjectRepository(ReadingStatus)
-    private readonly readingStatusesRepository: Repository<ReadingStatus>,
-    @InjectRepository(Book)
-    private readonly booksRepository: Repository<Book>,
+    private readonly readingStatusesRepository: ReadingStatusesRepository,
   ) {}
 
-  async upsert(
+  async setReadingStatus(
     userId: string,
     bookId: string,
     status: ReadingStatusEnum,
   ): Promise<ReadingStatusResponseDto> {
-    const book = await this.booksRepository.findOne({ where: { id: bookId } });
+    const book = await this.readingStatusesRepository.findBookById(bookId);
     if (!book) {
       throw new NotFoundException(`Book with id "${bookId}" not found`);
     }
 
-    await this.readingStatusesRepository.upsert(
-      {
-        userId,
-        bookId,
-        status,
-      },
-      {
-        conflictPaths: ['userId', 'bookId'],
-      },
+    await this.readingStatusesRepository.upsertForUserBook(
+      userId,
+      bookId,
+      status,
     );
 
-    const saved = await this.readingStatusesRepository.findOne({
-      where: { userId, bookId },
-    });
+    const saved = await this.readingStatusesRepository.findByUserAndBook(
+      userId,
+      bookId,
+    );
     if (!saved) {
       throw new NotFoundException('Reading status was not found after upsert');
     }

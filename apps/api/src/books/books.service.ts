@@ -3,12 +3,13 @@ import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
 import { firstValueFrom } from 'rxjs';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Book } from '../entities/book.entity';
 import { BookSearchResultDto } from './dto/book-search-result.dto';
 import { BooksCatalogItemDto } from './dto/books-catalog-item.dto';
 import { BooksCatalogResponseDto } from './dto/books-catalog-response.dto';
 import { ListBooksDto } from './dto/list-books.dto';
+import { BooksRepository } from './books.repository';
 
 type OpenLibrarySearchDoc = {
   key?: string;
@@ -30,6 +31,7 @@ export class BooksService {
 
   constructor(
     private readonly httpService: HttpService,
+    private readonly booksCatalogRepository: BooksRepository,
     @InjectRepository(Book)
     private readonly booksRepository: Repository<Book>,
   ) {}
@@ -37,7 +39,7 @@ export class BooksService {
   async list(query: ListBooksDto): Promise<BooksCatalogResponseDto> {
     const { page, limit, query: searchQuery, author } = query;
     const offset = (page - 1) * limit;
-    const [books, total] = await this.findCatalogBooks({
+    const [books, total] = await this.booksCatalogRepository.findCatalogBooks({
       searchQuery,
       author,
       sort: query.sort ?? 'createdAt',
@@ -47,53 +49,12 @@ export class BooksService {
     });
 
     return {
-      items: books.map((book) => this.toCatalogItem(book)),
+      items: books.map((book) => new BooksCatalogItemDto(book)),
       page,
       limit,
       total,
       totalPages: total === 0 ? 0 : Math.ceil(total / limit),
     };
-  }
-
-  private findCatalogBooks(options: {
-    searchQuery?: string;
-    author?: string;
-    sort: 'rating' | 'createdAt' | 'title';
-    order: 'asc' | 'desc';
-    offset: number;
-    limit: number;
-  }): Promise<[Book[], number]> {
-    const sortMap = {
-      rating: 'book.avgRating',
-      createdAt: 'book.createdAt',
-      title: 'book.title',
-    } as const;
-    const sortField = sortMap[options.sort];
-    const sortOrder = options.order.toUpperCase() as 'ASC' | 'DESC';
-
-    const qb = this.booksRepository.createQueryBuilder('book');
-
-    if (options.searchQuery) {
-      qb.andWhere('(book.title ILIKE :query OR book.author ILIKE :query)', {
-        query: `%${options.searchQuery}%`,
-      });
-    }
-
-    if (options.author) {
-      qb.andWhere('book.author ILIKE :author', {
-        author: `%${options.author}%`,
-      });
-    }
-
-    if (sortField === 'book.avgRating') {
-      qb.orderBy(sortField, sortOrder, 'NULLS LAST');
-    } else {
-      qb.orderBy(sortField, sortOrder);
-    }
-
-    qb.skip(options.offset).take(options.limit);
-
-    return qb.getManyAndCount();
   }
 
   async search(query: string): Promise<BookSearchResultDto[]> {
@@ -124,8 +85,10 @@ export class BooksService {
     try {
       await this.cacheBooks(results);
     } catch (error) {
-      const cacheError = error as Error;
-      this.logger.warn(`Failed to cache books locally: ${cacheError.message}`);
+      const persistError = error as Error;
+      this.logger.warn(
+        `Failed to persist OpenLibrary books to local database: ${persistError.message}`,
+      );
     }
 
     return results;
@@ -149,44 +112,20 @@ export class BooksService {
   }
 
   private async cacheBooks(books: BookSearchResultDto[]): Promise<void> {
-    const externalIds = [...new Set(books.map((book) => book.externalId))];
-    if (externalIds.length === 0) return;
-
-    const existingBooks = await this.booksRepository.findBy({
-      externalId: In(externalIds),
-    });
-    const existingExternalIds = new Set(
-      existingBooks.map((book) => book.externalId),
-    );
-
-    const missingBooks = books.filter(
-      (book) => !existingExternalIds.has(book.externalId),
-    );
-    if (missingBooks.length === 0) return;
-
-    const entities = missingBooks.map((book) =>
-      this.booksRepository.create({
+    const payload = books
+      .filter((book) => book.externalId?.trim())
+      .map((book) => ({
         externalId: book.externalId,
         title: book.title,
         author: book.author,
         coverUrl: book.coverUrl,
         description: null,
-      }),
-    );
+      }));
+    if (payload.length === 0) return;
 
-    await this.booksRepository.save(entities);
-  }
-
-  private toCatalogItem(book: Book): BooksCatalogItemDto {
-    return {
-      id: book.id,
-      externalId: book.externalId,
-      title: book.title,
-      author: book.author,
-      coverUrl: book.coverUrl,
-      avgRating: book.avgRating,
-      reviewCount: book.reviewCount,
-      createdAt: book.createdAt,
-    };
+    await this.booksRepository.upsert(payload, {
+      conflictPaths: ['externalId'],
+      skipUpdateIfNoValuesChanged: true,
+    });
   }
 }

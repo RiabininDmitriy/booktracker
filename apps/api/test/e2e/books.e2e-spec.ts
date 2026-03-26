@@ -2,7 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
-import { createTestApp } from './utils/create-test-app';
+import { createTestApp } from '../utils/create-test-app';
 
 type ValidationErrorResponse = {
   statusCode: number;
@@ -42,7 +42,6 @@ describe('Books (e2e)', () => {
       .get('/books/search')
       .expect(400);
     const body = res.body as ValidationErrorResponse;
-
     expect(body).toMatchObject({
       statusCode: 400,
       message: 'Validation failed',
@@ -55,7 +54,6 @@ describe('Books (e2e)', () => {
       .get('/books/search?q=a')
       .expect(400);
     const body = res.body as ValidationErrorResponse;
-
     expect(body).toMatchObject({
       statusCode: 400,
       message: 'Validation failed',

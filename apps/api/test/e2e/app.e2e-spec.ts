@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { App } from 'supertest/types';
-import { createTestApp } from './utils/create-test-app';
+import { createTestApp } from '../utils/create-test-app';
 
 type OpenApiBody = {
   openapi: string;

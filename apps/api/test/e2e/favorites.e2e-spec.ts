@@ -2,7 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
-import { createTestApp } from './utils/create-test-app';
+import { createTestApp } from '../utils/create-test-app';
 
 function uniqueEmail(prefix = 'favorite'): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
@@ -46,19 +46,13 @@ describe('Favorites (e2e)', () => {
       .put(`/favorites/${bookId}/toggle`)
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
-    expect(onRes.body).toMatchObject({
-      bookId,
-      isFavorite: true,
-    });
+    expect(onRes.body).toMatchObject({ bookId, isFavorite: true });
 
     const offRes = await agent
       .put(`/favorites/${bookId}/toggle`)
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
-    expect(offRes.body).toMatchObject({
-      bookId,
-      isFavorite: false,
-    });
+    expect(offRes.body).toMatchObject({ bookId, isFavorite: false });
 
     const countRows = (await dataSource.query(
       `SELECT COUNT(*)::int AS count FROM favorites WHERE book_id = $1`,

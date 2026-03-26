@@ -4,54 +4,44 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Book, UserRole } from '../entities';
+import { UserRole } from '../entities';
 import { Review } from '../entities/review.entity';
 import { ReviewResponseDto } from './dto/review-response.dto';
+import { ReviewsRepository } from './reviews.repository';
 
 @Injectable()
 export class ReviewsService {
-  constructor(
-    @InjectRepository(Review)
-    private readonly reviewsRepository: Repository<Review>,
-    @InjectRepository(Book)
-    private readonly booksRepository: Repository<Book>,
-  ) {}
+  constructor(private readonly reviewsRepository: ReviewsRepository) {}
 
   async create(
     userId: string,
     bookId: string,
     text: string,
   ): Promise<ReviewResponseDto> {
-    const book = await this.booksRepository.findOne({ where: { id: bookId } });
+    const book = await this.reviewsRepository.findBookById(bookId);
     if (!book) {
       throw new NotFoundException(`Book with id "${bookId}" not found`);
     }
 
-    const existing = await this.reviewsRepository.findOne({
-      where: { userId, bookId },
-    });
+    const existing = await this.reviewsRepository.findByUserAndBook(
+      userId,
+      bookId,
+    );
     if (existing) {
       throw new ConflictException('Review for this book already exists');
     }
 
-    const review = await this.reviewsRepository.save(
-      this.reviewsRepository.create({
-        userId,
-        bookId,
-        text,
-      }),
+    const review = await this.reviewsRepository.createReview(
+      userId,
+      bookId,
+      text,
     );
 
     return this.toDto(review);
   }
 
   async listByBook(bookId: string): Promise<ReviewResponseDto[]> {
-    const reviews = await this.reviewsRepository.find({
-      where: { bookId },
-      order: { createdAt: 'DESC' },
-    });
+    const reviews = await this.reviewsRepository.findByBookOrdered(bookId);
     return reviews.map((review) => this.toDto(review));
   }
 
@@ -61,9 +51,7 @@ export class ReviewsService {
     userRole: UserRole,
     text: string,
   ): Promise<ReviewResponseDto> {
-    const review = await this.reviewsRepository.findOne({
-      where: { id: reviewId },
-    });
+    const review = await this.reviewsRepository.findById(reviewId);
     if (!review) {
       throw new NotFoundException(`Review with id "${reviewId}" not found`);
     }
@@ -82,9 +70,7 @@ export class ReviewsService {
     userId: string,
     userRole: UserRole,
   ): Promise<void> {
-    const review = await this.reviewsRepository.findOne({
-      where: { id: reviewId },
-    });
+    const review = await this.reviewsRepository.findById(reviewId);
     if (!review) {
       throw new NotFoundException(`Review with id "${reviewId}" not found`);
     }
@@ -93,7 +79,7 @@ export class ReviewsService {
       throw new ForbiddenException('You can delete only your own review');
     }
 
-    await this.reviewsRepository.delete({ id: reviewId });
+    await this.reviewsRepository.deleteById(reviewId);
   }
 
   private toDto(review: Review): ReviewResponseDto {

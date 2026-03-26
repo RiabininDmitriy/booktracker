@@ -2,7 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { DataSource } from 'typeorm';
-import { createTestApp } from './utils/create-test-app';
+import { createTestApp } from '../utils/create-test-app';
 
 function uniqueEmail(prefix = 'reviews'): string {
   return `${prefix}_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
@@ -30,7 +30,6 @@ describe('Reviews (e2e)', () => {
     const userAgent = request.agent(app.getHttpServer());
     const adminAgent = request.agent(app.getHttpServer());
     const outsiderAgent = request.agent(app.getHttpServer());
-
     const userEmail = uniqueEmail('review-user');
     const adminEmail = uniqueEmail('review-admin');
     const outsiderEmail = uniqueEmail('review-outsider');

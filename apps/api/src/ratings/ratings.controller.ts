@@ -22,7 +22,7 @@ export class RatingsController {
   constructor(private readonly ratingsService: RatingsService) {}
 
   @Put(':bookId')
-  upsert(
+  setRating(
     @Param('bookId', new ParseUUIDPipe()) bookId: string,
     @Body() dto: UpsertRatingDto,
     @CurrentUser() user: RequestUser | undefined,
@@ -31,6 +31,6 @@ export class RatingsController {
       throw new UnauthorizedException('Missing user context');
     }
 
-    return this.ratingsService.upsert(user.id, bookId, dto.value);
+    return this.ratingsService.setRating(user.id, bookId, dto.value);
   }
 }

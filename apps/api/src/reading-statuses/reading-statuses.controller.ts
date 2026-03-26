@@ -24,7 +24,7 @@ export class ReadingStatusesController {
   ) {}
 
   @Put(':bookId')
-  upsert(
+  setReadingStatus(
     @Param('bookId', new ParseUUIDPipe()) bookId: string,
     @Body() dto: UpsertReadingStatusDto,
     @CurrentUser() user: RequestUser | undefined,
@@ -33,6 +33,10 @@ export class ReadingStatusesController {
       throw new UnauthorizedException('Missing user context');
     }
 
-    return this.readingStatusesService.upsert(user.id, bookId, dto.status);
+    return this.readingStatusesService.setReadingStatus(
+      user.id,
+      bookId,
+      dto.status,
+    );
   }
 }
