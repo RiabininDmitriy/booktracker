@@ -79,6 +79,8 @@ export class BooksService {
   }
 
   async search(query: string): Promise<BookSearchResultDto[]> {
+    let results: BookSearchResultDto[];
+
     try {
       const { data } = await firstValueFrom(
         this.httpService.get<OpenLibrarySearchResponse>(
@@ -92,18 +94,23 @@ export class BooksService {
         ),
       );
 
-      const results = (data.docs ?? [])
+      results = (data.docs ?? [])
         .filter((doc) => doc.key && doc.title)
         .map((doc) => this.mapOpenLibraryDoc(doc));
-
-      await this.cacheBooks(results);
-
-      return results;
     } catch (error) {
       const axiosError = error as AxiosError<unknown>;
       this.logger.error('OpenLibrary request failed', axiosError.message);
       throw new BadGatewayException('Failed to fetch books from OpenLibrary');
     }
+
+    try {
+      await this.cacheBooks(results);
+    } catch (error) {
+      const cacheError = error as Error;
+      this.logger.warn(`Failed to cache books locally: ${cacheError.message}`);
+    }
+
+    return results;
   }
 
   private mapOpenLibraryDoc(doc: OpenLibrarySearchDoc): BookSearchResultDto {
