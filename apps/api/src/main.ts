@@ -1,6 +1,7 @@
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationError } from 'class-validator';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
@@ -28,6 +29,16 @@ async function bootstrap() {
       },
     }),
   );
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Booktracker API')
+    .setDescription('API documentation for Booktracker backend')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('docs', app, swaggerDocument);
+
   const configService = app.get(ConfigService);
   const port = configService.get<number>('PORT', 3001);
   await app.listen(port);

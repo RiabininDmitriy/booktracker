@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import cookieParser from 'cookie-parser';
 import { ValidationError } from 'class-validator';
 import type { INestApplication } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { App } from 'supertest/types';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
 
@@ -47,6 +48,16 @@ export async function createTestApp(): Promise<INestApplication<App>> {
       },
     }),
   );
+
+  // Mirror Swagger setup from main.ts for docs smoke tests.
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Booktracker API')
+    .setDescription('API documentation for Booktracker backend')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('docs', app, swaggerDocument);
 
   await app.init();
   return app;

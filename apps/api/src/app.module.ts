@@ -5,6 +5,7 @@ import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { BooksModule } from './books/books.module';
 import {
   Book,
   Favorite,
@@ -13,7 +14,11 @@ import {
   Review,
   User,
 } from './entities';
+import { FavoritesModule } from './favorites/favorites.module';
 import { HealthController } from './health/health.controller';
+import { ReadingStatusesModule } from './reading-statuses/reading-statuses.module';
+import { RatingsModule } from './ratings/ratings.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -45,6 +50,11 @@ import { UsersModule } from './users/users.module';
     ]),
     UsersModule,
     AuthModule,
+    BooksModule,
+    ReadingStatusesModule,
+    ReviewsModule,
+    RatingsModule,
+    FavoritesModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
