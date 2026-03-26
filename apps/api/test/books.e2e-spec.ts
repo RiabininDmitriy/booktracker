@@ -70,13 +70,13 @@ describe('Books (e2e)', () => {
     await dataSource.query(
       `INSERT INTO books (external_id, title, author, cover_url, description, avg_rating, review_count)
        VALUES
-       ('e2e-books-1', 'Book Alpha', 'Author A', NULL, NULL, 4.20, 3),
-       ('e2e-books-2', 'Book Beta', 'Author B', NULL, NULL, 4.80, 7),
-       ('e2e-books-3', 'Book Gamma', 'Author A', NULL, NULL, 3.90, 1)`,
+       ('e2e-books-1', 'Catalog Alpha', 'Author A', NULL, NULL, 4.20, 3),
+       ('e2e-books-2', 'Catalog Beta', 'Author B', NULL, NULL, 4.80, 7),
+       ('e2e-books-3', 'Catalog Gamma', 'Author A', NULL, NULL, 3.90, 1)`,
     );
 
     const res = await request(app.getHttpServer())
-      .get('/books?page=1&limit=2&sort=rating&order=desc')
+      .get('/books?page=1&limit=2&sort=rating&order=desc&query=Catalog')
       .expect(200);
     const body = res.body as CatalogResponse;
 
@@ -88,19 +88,19 @@ describe('Books (e2e)', () => {
     expect(body.items.length).toBeLessThanOrEqual(2);
     expect(body.items[0]).toMatchObject({
       externalId: 'e2e-books-2',
-      title: 'Book Beta',
+      title: 'Catalog Beta',
     });
   });
 
   it('catalog list supports filters by text and author', async () => {
     const res = await request(app.getHttpServer())
-      .get('/books?page=1&limit=10&q=Book&author=Author%20A')
+      .get('/books?page=1&limit=10&query=Catalog&author=Author%20A')
       .expect(200);
     const body = res.body as CatalogResponse;
 
     expect(Array.isArray(body.items)).toBe(true);
     for (const item of body.items) {
-      expect(item.title).toContain('Book');
+      expect(item.title).toContain('Catalog');
       expect(item.author ?? '').toContain('Author A');
     }
   });
