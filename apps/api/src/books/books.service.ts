@@ -37,25 +37,51 @@ export class BooksService {
   async list(query: ListBooksDto): Promise<BooksCatalogResponseDto> {
     const { page, limit, query: searchQuery, author } = query;
     const offset = (page - 1) * limit;
+    const [books, total] = await this.findCatalogBooks({
+      searchQuery,
+      author,
+      sort: query.sort ?? 'createdAt',
+      order: query.order ?? 'desc',
+      offset,
+      limit,
+    });
+
+    return {
+      items: books.map((book) => this.toCatalogItem(book)),
+      page,
+      limit,
+      total,
+      totalPages: total === 0 ? 0 : Math.ceil(total / limit),
+    };
+  }
+
+  private findCatalogBooks(options: {
+    searchQuery?: string;
+    author?: string;
+    sort: 'rating' | 'createdAt' | 'title';
+    order: 'asc' | 'desc';
+    offset: number;
+    limit: number;
+  }): Promise<[Book[], number]> {
     const sortMap = {
       rating: 'book.avgRating',
       createdAt: 'book.createdAt',
       title: 'book.title',
     } as const;
-    const sortField = sortMap[query.sort ?? 'createdAt'];
-    const sortOrder = (query.order ?? 'desc').toUpperCase() as 'ASC' | 'DESC';
+    const sortField = sortMap[options.sort];
+    const sortOrder = options.order.toUpperCase() as 'ASC' | 'DESC';
 
     const qb = this.booksRepository.createQueryBuilder('book');
 
-    if (searchQuery) {
+    if (options.searchQuery) {
       qb.andWhere('(book.title ILIKE :query OR book.author ILIKE :query)', {
-        query: `%${searchQuery}%`,
+        query: `%${options.searchQuery}%`,
       });
     }
 
-    if (author) {
+    if (options.author) {
       qb.andWhere('book.author ILIKE :author', {
-        author: `%${author}%`,
+        author: `%${options.author}%`,
       });
     }
 
@@ -65,17 +91,9 @@ export class BooksService {
       qb.orderBy(sortField, sortOrder);
     }
 
-    qb.skip(offset).take(limit);
+    qb.skip(options.offset).take(options.limit);
 
-    const [books, total] = await qb.getManyAndCount();
-
-    return {
-      items: books.map((book) => this.toCatalogItem(book)),
-      page,
-      limit,
-      total,
-      totalPages: total === 0 ? 0 : Math.ceil(total / limit),
-    };
+    return qb.getManyAndCount();
   }
 
   async search(query: string): Promise<BookSearchResultDto[]> {
