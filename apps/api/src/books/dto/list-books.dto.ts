@@ -34,7 +34,7 @@ export class ListBooksDto {
   @IsString()
   @MinLength(2)
   @IsOptional()
-  q?: string;
+  query?: string;
 
   @IsString()
   @MinLength(2)

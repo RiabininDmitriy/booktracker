@@ -35,4 +35,3 @@ AGENTS.md
 TASKS.md
 BOOKS_TICKETS.md
 .cursor/*
-!.cursor/settings.json

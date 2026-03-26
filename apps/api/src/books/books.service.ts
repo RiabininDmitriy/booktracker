@@ -6,10 +6,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Book } from '../entities/book.entity';
 import { BookSearchResultDto } from './dto/book-search-result.dto';
-import {
-  BooksCatalogResponseDto,
-  BooksCatalogItemDto,
-} from './dto/books-catalog-item.dto';
+import { BooksCatalogItemDto } from './dto/books-catalog-item.dto';
+import { BooksCatalogResponseDto } from './dto/books-catalog-response.dto';
 import { ListBooksDto } from './dto/list-books.dto';
 
 type OpenLibrarySearchDoc = {
@@ -37,7 +35,7 @@ export class BooksService {
   ) {}
 
   async list(query: ListBooksDto): Promise<BooksCatalogResponseDto> {
-    const { page, limit, q, author } = query;
+    const { page, limit, query: searchQuery, author } = query;
     const offset = (page - 1) * limit;
     const sortMap = {
       rating: 'book.avgRating',
@@ -49,9 +47,9 @@ export class BooksService {
 
     const qb = this.booksRepository.createQueryBuilder('book');
 
-    if (q) {
-      qb.andWhere('(book.title ILIKE :q OR book.author ILIKE :q)', {
-        q: `%${q}%`,
+    if (searchQuery) {
+      qb.andWhere('(book.title ILIKE :query OR book.author ILIKE :query)', {
+        query: `%${searchQuery}%`,
       });
     }
 

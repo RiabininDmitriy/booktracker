@@ -8,11 +8,3 @@ export class BooksCatalogItemDto {
   reviewCount: number;
   createdAt: Date;
 }
-
-export class BooksCatalogResponseDto {
-  items: BooksCatalogItemDto[];
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-}
