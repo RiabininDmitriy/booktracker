@@ -1,5 +1,5 @@
-import { AuthShell } from '@/components/auth/auth-shell';
+import { redirect } from 'next/navigation';
 
 export default function Home() {
-  return <AuthShell />;
+  redirect('/sign-in');
 }

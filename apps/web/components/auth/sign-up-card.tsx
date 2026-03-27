@@ -1,14 +1,38 @@
+import type { FormEvent } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import Link from 'next/link';
 
 import { AuthField } from './auth-field';
 
 type SignUpCardProps = {
-  onSwitchToSignIn: () => void;
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  onNameChange: (value: string) => void;
+  onEmailChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
+  onConfirmPasswordChange: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  isSubmitting?: boolean;
+  error?: string | null;
 };
 
-export function SignUpCard({ onSwitchToSignIn }: SignUpCardProps) {
+export function SignUpCard({
+  name,
+  email,
+  password,
+  confirmPassword,
+  onNameChange,
+  onEmailChange,
+  onPasswordChange,
+  onConfirmPasswordChange,
+  onSubmit,
+  isSubmitting = false,
+  error = null,
+}: SignUpCardProps) {
   return (
     <Card className="w-full md:max-w-[440px]">
       <CardHeader>
@@ -16,42 +40,76 @@ export function SignUpCard({ onSwitchToSignIn }: SignUpCardProps) {
         <CardDescription>Start tracking your reading journey</CardDescription>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        <AuthField idPrefix="signup" label="Full name" placeholder="Dmytro Riabinin" />
-        <AuthField idPrefix="signup" label="Email address" placeholder="dmytro@example.com" />
-        <AuthField
-          idPrefix="signup"
-          label="Password"
-          placeholder="min 8 characters"
-          type="password"
-        />
-        <AuthField
-          idPrefix="signup"
-          label="Confirm password"
-          placeholder="repeat password"
-          type="password"
-        />
+      <CardContent>
+        <form className="space-y-4" data-testid="sign-up-form" onSubmit={onSubmit}>
+          <AuthField
+            idPrefix="signup"
+            label="Full name"
+            placeholder="Dmytro Riabinin"
+            name="name"
+            autoComplete="name"
+            value={name}
+            onChange={(event) => onNameChange(event.target.value)}
+          />
+          <AuthField
+            idPrefix="signup"
+            label="Email address"
+            placeholder="dmytro@example.com"
+            type="email"
+            name="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => onEmailChange(event.target.value)}
+            required
+          />
+          <AuthField
+            idPrefix="signup"
+            label="Password"
+            placeholder="min 8 characters"
+            type="password"
+            name="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => onPasswordChange(event.target.value)}
+            required
+          />
+          <AuthField
+            idPrefix="signup"
+            label="Confirm password"
+            placeholder="repeat password"
+            type="password"
+            name="confirmPassword"
+            autoComplete="new-password"
+            value={confirmPassword}
+            onChange={(event) => onConfirmPasswordChange(event.target.value)}
+            required
+          />
 
-        <Button className="w-full" size="lg">
-          Create Account
-        </Button>
+          {error ? <p className="text-sm text-danger">{error}</p> : null}
 
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
-          <button
-            className="text-primary hover:text-primary-hover"
-            onClick={onSwitchToSignIn}
-            type="button"
+          <Button
+            className="w-full"
+            size="lg"
+            type="submit"
+            disabled={isSubmitting}
+            data-testid="sign-up-submit"
           >
-            Sign in
-          </button>
-        </p>
+            {isSubmitting ? 'Creating account...' : 'Create Account'}
+          </Button>
 
-        <div className="flex items-center justify-center gap-2">
-          <span className="text-sm text-muted-foreground">Preview state:</span>
-          {/* We keep this badge to quickly validate semantic token rendering on every auth state. */}
-          <Badge variant="info">Design token ready</Badge>
-        </div>
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link className="text-primary hover:text-primary-hover" href="/sign-in">
+              Sign in
+            </Link>
+          </p>
+
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-sm text-muted-foreground">Preview state:</span>
+            {/* We keep this badge to quickly validate semantic token rendering on every auth state. */}
+            <Badge variant="info">Design token ready</Badge>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );
