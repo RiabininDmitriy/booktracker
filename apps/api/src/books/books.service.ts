@@ -44,7 +44,7 @@ export class BooksService {
   async list(query: ListBooksDto): Promise<BooksCatalogResponseDto> {
     const { page, limit, query: searchQuery, author } = query;
     const offset = (page - 1) * limit;
-    const [books, total] = await this.booksCatalogRepository.findCatalogBooks({
+    let [books, total] = await this.booksCatalogRepository.findCatalogBooks({
       searchQuery,
       author,
       sort: query.sort ?? 'createdAt',
@@ -52,6 +52,27 @@ export class BooksService {
       offset,
       limit,
     });
+
+    // If the local catalog has no matches for a text query, hydrate cache from
+    // OpenLibrary and retry once so users can discover books immediately.
+    if (total === 0 && searchQuery?.trim()) {
+      try {
+        await this.search(searchQuery.trim());
+        [books, total] = await this.booksCatalogRepository.findCatalogBooks({
+          searchQuery: searchQuery.trim(),
+          author,
+          sort: query.sort ?? 'createdAt',
+          order: query.order ?? 'desc',
+          offset,
+          limit,
+        });
+      } catch (error) {
+        const openLibraryError = error as Error;
+        this.logger.warn(
+          `Catalog fallback search failed: ${openLibraryError.message}`,
+        );
+      }
+    }
 
     return {
       items: books.map((book) => new BooksCatalogItemDto(book)),

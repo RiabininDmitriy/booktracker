@@ -1,5 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import type { RootState } from '../store';
+
+// Narrow state shape for headers only — avoids importing RootState from store.ts (circular: store → baseApi → store).
+type AuthTokenSlice = { auth: { accessToken: string | null } };
 
 // Keep the base URL in env so web can point to local API in dev and cloud API in prod.
 const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -28,7 +30,7 @@ export const baseApi = createApi({
     baseUrl,
     credentials: 'include',
     prepareHeaders: (headers, { getState }) => {
-      const stateToken = (getState() as RootState).auth.accessToken;
+      const stateToken = (getState() as AuthTokenSlice).auth.accessToken;
       const token = stateToken ?? getAccessTokenFromCookie();
       if (token) {
         headers.set('authorization', `Bearer ${token}`);

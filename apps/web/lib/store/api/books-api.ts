@@ -35,7 +35,7 @@ export type CatalogQuery = {
 export const booksApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getCatalog: builder.query<CatalogResponse, CatalogQuery>({
-      query: ({ page = 1, limit = 12, sort = 'createdAt', order = 'desc', query, author }) => ({
+      query: ({ page = 1, limit = 12, sort = 'title', order = 'desc', query, author }) => ({
         url: '/books',
         params: {
           page,
