@@ -1,4 +1,9 @@
-import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
 import { firstValueFrom } from 'rxjs';
@@ -55,6 +60,16 @@ export class BooksService {
       total,
       totalPages: total === 0 ? 0 : Math.ceil(total / limit),
     };
+  }
+
+  async findById(bookId: string): Promise<BooksCatalogItemDto> {
+    const book = await this.booksCatalogRepository.findById(bookId);
+
+    if (!book) {
+      throw new NotFoundException('Book not found');
+    }
+
+    return new BooksCatalogItemDto(book);
   }
 
   async search(query: string): Promise<BookSearchResultDto[]> {

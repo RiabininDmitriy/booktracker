@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 const ACCESS_COOKIE_NAME = 'access_token';
 const AUTH_PAGES = ['/sign-in', '/sign-up'];
-const PROTECTED_PATH_PREFIXES = ['/dashboard', '/catalog'];
+const PROTECTED_PATH_PREFIXES = ['/dashboard', '/catalog', '/books'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -28,5 +28,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/sign-in', '/sign-up', '/dashboard/:path*', '/catalog/:path*'],
+  matcher: ['/sign-in', '/sign-up', '/dashboard/:path*', '/catalog/:path*', '/books/:path*'],
 };

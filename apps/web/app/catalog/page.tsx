@@ -1,14 +1,14 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import Link from 'next/link';
+import { Suspense, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import { CatalogBookCard } from '@/components/catalog/catalog-book-card';
+import { CatalogFilters } from '@/components/catalog/catalog-filters';
+import { CatalogHeader } from '@/components/catalog/catalog-header';
+import { CatalogPagination } from '@/components/catalog/catalog-pagination';
 import { useGetCatalogQuery, type CatalogOrder, type CatalogSort } from '@/lib/store/api/books-api';
 
 function toPositiveInt(value: string | null, fallback: number): number {
@@ -24,7 +24,7 @@ function toOrder(value: string | null): CatalogOrder {
   return value === 'asc' || value === 'desc' ? value : 'desc';
 }
 
-export default function CatalogPage() {
+function CatalogPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -91,67 +91,23 @@ export default function CatalogPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-8 md:px-8 md:py-12">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Catalog</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Browse books with search, filters and pagination.
-            </p>
-          </div>
-          <Link
-            className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-medium text-foreground"
-            href="/dashboard"
-          >
-            Back to dashboard
-          </Link>
-        </div>
+        <CatalogHeader
+          title="Catalog"
+          subtitle="Browse books with search, filters and pagination."
+        />
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Filters</CardTitle>
-            <CardDescription>Search by title/author and adjust sorting.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              className="grid gap-3 md:grid-cols-5"
-              data-testid="catalog-filters"
-              onSubmit={handleApplyFilters}
-            >
-              <Input
-                data-testid="catalog-query-input"
-                placeholder="Search title or author"
-                value={queryInput}
-                onChange={(event) => setQueryInput(event.target.value)}
-              />
-              <Input
-                data-testid="catalog-author-input"
-                placeholder="Author"
-                value={authorInput}
-                onChange={(event) => setAuthorInput(event.target.value)}
-              />
-              <Select
-                data-testid="catalog-sort-select"
-                value={sort}
-                onChange={(event) => updateParams({ page: '1', sort: event.target.value })}
-              >
-                <option value="createdAt">Newest</option>
-                <option value="title">Title</option>
-                <option value="rating">Rating</option>
-              </Select>
-              <Select
-                data-testid="catalog-order-select"
-                value={order}
-                onChange={(event) => updateParams({ page: '1', order: event.target.value })}
-              >
-                <option value="desc">DESC</option>
-                <option value="asc">ASC</option>
-              </Select>
-              <Button type="submit" data-testid="catalog-apply-button">
-                {isFetching ? 'Applying...' : 'Apply'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <CatalogFilters
+          queryInput={queryInput}
+          authorInput={authorInput}
+          sort={sort}
+          order={order}
+          isFetching={isFetching}
+          onQueryChange={setQueryInput}
+          onAuthorChange={setAuthorInput}
+          onApplyFilters={handleApplyFilters}
+          onSortChange={(value) => updateParams({ page: '1', sort: value })}
+          onOrderChange={(value) => updateParams({ page: '1', order: value })}
+        />
 
         <div className="flex items-center justify-between gap-2">
           <p className="text-sm text-muted-foreground">{summary}</p>
@@ -169,32 +125,7 @@ export default function CatalogPage() {
         {!isError ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {books.map((book) => (
-              <Card key={book.id}>
-                <CardHeader>
-                  <CardTitle className="line-clamp-2 text-xl">{book.title}</CardTitle>
-                  <CardDescription>{book.author ?? 'Unknown author'}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={book.avgRating ? 'success' : 'default'}>
-                      {book.avgRating ? `Rating ${book.avgRating.toFixed(1)}` : 'No rating'}
-                    </Badge>
-                    <Badge variant="info">{book.reviewCount} reviews</Badge>
-                  </div>
-                  {book.coverUrl ? (
-                    <a
-                      className="text-sm text-primary hover:text-primary-hover"
-                      href={book.coverUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Open cover
-                    </a>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">No cover available</p>
-                  )}
-                </CardContent>
-              </Card>
+              <CatalogBookCard key={book.id} book={book} />
             ))}
           </div>
         ) : null}
@@ -207,29 +138,22 @@ export default function CatalogPage() {
           </Card>
         ) : null}
 
-        <div className="flex items-center justify-between gap-2">
-          <Button
-            data-testid="catalog-prev-button"
-            variant="secondary"
-            onClick={() => goToPage(page - 1)}
-            disabled={page <= 1 || isLoading}
-          >
-            Previous
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            Page {page}
-            {totalPages > 0 ? ` / ${totalPages}` : ''}
-          </p>
-          <Button
-            data-testid="catalog-next-button"
-            variant="secondary"
-            onClick={() => goToPage(page + 1)}
-            disabled={isLoading || totalPages === 0 || page >= totalPages}
-          >
-            Next
-          </Button>
-        </div>
+        <CatalogPagination
+          page={page}
+          totalPages={totalPages}
+          isLoading={isLoading}
+          onPrev={() => goToPage(page - 1)}
+          onNext={() => goToPage(page + 1)}
+        />
       </div>
     </main>
+  );
+}
+
+export default function CatalogPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-background px-4 py-8 md:px-8 md:py-12" />}>
+      <CatalogPageContent />
+    </Suspense>
   );
 }
