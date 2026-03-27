@@ -33,7 +33,6 @@ node_modules/
 # Agent/task markdown (local workflow notes)
 AGENTS.md
 TASKS.md
-BOOKS_TICKETS.md
 
 # Cursor local files
 .cursor/
