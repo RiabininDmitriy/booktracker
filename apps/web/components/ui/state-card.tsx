@@ -1,4 +1,4 @@
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 
 type StateCardProps = {
   message: string;
@@ -8,9 +8,9 @@ type StateCardProps = {
 function BaseStateCard({ message, className }: StateCardProps) {
   return (
     <Card className={className}>
-      <CardContent className="py-8">
+      <div className="flex min-h-[6.5rem] flex-col items-center justify-center px-6 py-8 text-center">
         <p className="text-sm text-muted-foreground">{message}</p>
-      </CardContent>
+      </div>
     </Card>
   );
 }
@@ -29,9 +29,9 @@ export function ErrorStateCard({
 }: Partial<StateCardProps>) {
   return (
     <Card className={className}>
-      <CardContent className="py-8">
+      <div className="flex min-h-[6.5rem] flex-col items-center justify-center px-6 py-8 text-center">
         <p className="text-sm text-danger">{message}</p>
-      </CardContent>
+      </div>
     </Card>
   );
 }

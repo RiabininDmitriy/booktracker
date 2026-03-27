@@ -51,6 +51,21 @@ export const bookDetailApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Review', 'Book'],
     }),
+    updateReview: builder.mutation<Review, { reviewId: string; text: string }>({
+      query: ({ reviewId, text }) => ({
+        url: `/reviews/${reviewId}`,
+        method: 'PATCH',
+        body: { text },
+      }),
+      invalidatesTags: ['Review', 'Book'],
+    }),
+    deleteReview: builder.mutation<void, { reviewId: string }>({
+      query: ({ reviewId }) => ({
+        url: `/reviews/${reviewId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Review', 'Book'],
+    }),
     setRating: builder.mutation<RatingResponse, { bookId: string; value: number }>({
       query: ({ bookId, value }) => ({
         url: `/ratings/${bookId}`,
@@ -84,6 +99,8 @@ export const {
   useGetBookByIdQuery,
   useGetReviewsByBookQuery,
   useAddReviewMutation,
+  useUpdateReviewMutation,
+  useDeleteReviewMutation,
   useSetRatingMutation,
   useSetReadingStatusMutation,
   useToggleFavoriteMutation,
