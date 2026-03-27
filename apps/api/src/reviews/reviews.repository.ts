@@ -34,6 +34,7 @@ export class ReviewsRepository {
   findByBookOrdered(bookId: string): Promise<Review[]> {
     return this.reviewsRepository.find({
       where: { bookId },
+      relations: { user: true },
       order: { createdAt: 'DESC' },
     });
   }

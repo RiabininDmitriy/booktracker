@@ -7,6 +7,7 @@ import { SignOutButton } from '@/components/auth/sign-out-button';
 import { DashboardReadingColumn } from '@/components/dashboard/dashboard-reading-column';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorStateCard, LoadingStateCard } from '@/components/ui/state-card';
 import type { DashboardReadingItem } from '@/lib/store/api/dashboard-api';
 import { useGetMyReadingStatusesQuery } from '@/lib/store/api/dashboard-api';
 
@@ -56,10 +57,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading reading lists...</p>
-        ) : null}
-        {isError ? <p className="text-sm text-danger">Failed to load dashboard lists.</p> : null}
+        {isLoading ? <LoadingStateCard message="Loading reading lists..." /> : null}
+        {isError ? <ErrorStateCard message="Failed to load dashboard lists." /> : null}
 
         {!isLoading && !isError ? (
           <div className="grid gap-4 md:grid-cols-3">
