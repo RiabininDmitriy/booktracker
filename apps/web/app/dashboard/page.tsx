@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { SignOutButton } from '@/components/auth/sign-out-button';
 
@@ -15,7 +17,15 @@ export default function DashboardPage() {
           <p className="text-sm text-muted-foreground">
             You are authenticated and can continue to app features.
           </p>
-          <SignOutButton />
+          <div className="flex items-center gap-2">
+            <Link
+              className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-medium text-foreground"
+              href="/catalog"
+            >
+              Open catalog
+            </Link>
+            <SignOutButton />
+          </div>
         </CardContent>
       </Card>
     </main>
