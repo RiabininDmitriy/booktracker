@@ -139,6 +139,18 @@ export function CatalogPageClient({
     });
   };
 
+  const handleClearFilters = () => {
+    setQueryInput('');
+    setAuthorInput('');
+    updateParams({
+      page: '1',
+      query: undefined,
+      author: undefined,
+      sort: undefined,
+      order: undefined,
+    });
+  };
+
   const goToPage = (nextPage: number) => {
     if (nextPage < 1 || (totalPages > 0 && nextPage > totalPages)) return;
     updateParams({ page: String(nextPage) });
@@ -161,6 +173,7 @@ export function CatalogPageClient({
           onQueryChange={setQueryInput}
           onAuthorChange={setAuthorInput}
           onApplyFilters={handleApplyFilters}
+          onClearFilters={handleClearFilters}
           onSortChange={(value) => updateParams({ page: '1', sort: value })}
           onOrderChange={(value) => updateParams({ page: '1', order: value })}
         />

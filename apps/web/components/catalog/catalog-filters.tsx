@@ -15,6 +15,7 @@ type CatalogFiltersProps = {
   onQueryChange: (value: string) => void;
   onAuthorChange: (value: string) => void;
   onApplyFilters: (event: FormEvent<HTMLFormElement>) => void;
+  onClearFilters: () => void;
   onSortChange: (value: string) => void;
   onOrderChange: (value: string) => void;
 };
@@ -28,6 +29,7 @@ export function CatalogFilters({
   onQueryChange,
   onAuthorChange,
   onApplyFilters,
+  onClearFilters,
   onSortChange,
   onOrderChange,
 }: CatalogFiltersProps) {
@@ -39,7 +41,7 @@ export function CatalogFilters({
       </CardHeader>
       <CardContent>
         <form
-          className="grid gap-3 md:grid-cols-5"
+          className="grid gap-3 md:grid-cols-2 lg:grid-cols-6"
           data-testid="catalog-filters"
           onSubmit={onApplyFilters}
         >
@@ -72,7 +74,16 @@ export function CatalogFilters({
             <option value="desc">DESC</option>
             <option value="asc">ASC</option>
           </Select>
-          <Button type="submit" data-testid="catalog-apply-button">
+          <Button
+            type="button"
+            variant="secondary"
+            className="h-11 w-full"
+            data-testid="catalog-clear-button"
+            onClick={onClearFilters}
+          >
+            Clear filters
+          </Button>
+          <Button type="submit" className="h-11 w-full" data-testid="catalog-apply-button">
             {isFetching ? 'Applying...' : 'Apply'}
           </Button>
         </form>
