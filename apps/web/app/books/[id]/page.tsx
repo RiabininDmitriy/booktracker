@@ -10,19 +10,30 @@ import { BookReviewsSection } from '@/components/books/book-reviews-section';
 import { ErrorStateCard, LoadingStateCard } from '@/components/ui/state-card';
 import {
   useAddReviewMutation,
+  useDeleteReviewMutation,
   useGetBookByIdQuery,
   useGetReviewsByBookQuery,
   useSetRatingMutation,
   useSetReadingStatusMutation,
   useToggleFavoriteMutation,
+  useUpdateReviewMutation,
   type ReadingStatus,
 } from '@/lib/store/api/book-detail-api';
+import { useMeQuery } from '@/lib/store/api/auth-api';
 import { useAppSelector } from '@/lib/store/hooks';
+
+const readingStatusOrder: Record<ReadingStatus, number> = {
+  planned: 0,
+  reading: 1,
+  completed: 2,
+};
 
 export default function BookDetailPage() {
   const params = useParams<{ id: string }>();
   const bookId = params?.id;
-  const currentUserId = useAppSelector((state) => state.auth.user?.id);
+  const authUserId = useAppSelector((state) => state.auth.user?.id);
+  const { data: me } = useMeQuery();
+  const currentUserId = authUserId ?? me?.id;
 
   const [draftReview, setDraftReview] = useState('');
   const [localRating, setLocalRating] = useState<number | null>(null);
@@ -45,8 +56,14 @@ export default function BookDetailPage() {
   const [setReadingStatus, { isLoading: isSavingStatus }] = useSetReadingStatusMutation();
   const [toggleFavorite, { isLoading: isTogglingFavorite }] = useToggleFavoriteMutation();
   const [addReview, { isLoading: isAddingReview }] = useAddReviewMutation();
+  const [updateReview, { isLoading: isUpdatingReview }] = useUpdateReviewMutation();
+  const [deleteReview, { isLoading: isDeletingReview }] = useDeleteReviewMutation();
 
   const effectiveRating = localRating ?? book?.avgRating ?? null;
+  const effectiveStatus = localStatus ?? 'planned';
+  const hasMyReview = Boolean(
+    currentUserId && reviews?.some((review) => review.userId === currentUserId)
+  );
 
   const reviewsCountLabel = useMemo(() => {
     if (!reviews) return 'Loading reviews...';
@@ -67,6 +84,13 @@ export default function BookDetailPage() {
 
   const handleStatus = async (status: ReadingStatus) => {
     if (!bookId) return;
+    if (readingStatusOrder[status] < readingStatusOrder[effectiveStatus]) {
+      setFeedback('Status can only move forward: planned -> reading -> completed.');
+      return;
+    }
+    if (status === effectiveStatus) {
+      return;
+    }
 
     try {
       const response = await setReadingStatus({ bookId, status }).unwrap();
@@ -92,6 +116,10 @@ export default function BookDetailPage() {
   const handleAddReview = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!bookId || !draftReview.trim()) return;
+    if (hasMyReview) {
+      setFeedback('You already reviewed this book.');
+      return;
+    }
 
     try {
       await addReview({ bookId, text: draftReview.trim() }).unwrap();
@@ -99,6 +127,25 @@ export default function BookDetailPage() {
       setFeedback('Review added.');
     } catch {
       setFeedback('Unable to add review.');
+    }
+  };
+
+  const handleUpdateReview = async (reviewId: string, text: string) => {
+    if (!text.trim()) return;
+    try {
+      await updateReview({ reviewId, text: text.trim() }).unwrap();
+      setFeedback('Review updated.');
+    } catch {
+      setFeedback('Unable to update review.');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    try {
+      await deleteReview({ reviewId }).unwrap();
+      setFeedback('Review deleted.');
+    } catch {
+      setFeedback('Unable to delete review.');
     }
   };
 
@@ -149,8 +196,12 @@ export default function BookDetailPage() {
           currentUserId={currentUserId}
           isReviewsLoading={isReviewsLoading}
           isAddingReview={isAddingReview}
+          isUpdatingReview={isUpdatingReview}
+          isDeletingReview={isDeletingReview}
           onDraftReviewChange={setDraftReview}
           onSubmit={handleAddReview}
+          onUpdateReview={handleUpdateReview}
+          onDeleteReview={handleDeleteReview}
         />
       </div>
     </main>

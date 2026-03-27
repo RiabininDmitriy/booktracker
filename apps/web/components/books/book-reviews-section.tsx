@@ -1,4 +1,4 @@
-import type { FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,8 +12,12 @@ type BookReviewsSectionProps = {
   currentUserId?: string;
   isReviewsLoading: boolean;
   isAddingReview: boolean;
+  isUpdatingReview: boolean;
+  isDeletingReview: boolean;
   onDraftReviewChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onUpdateReview: (reviewId: string, text: string) => void;
+  onDeleteReview: (reviewId: string) => void;
 };
 
 export function BookReviewsSection({
@@ -22,9 +26,21 @@ export function BookReviewsSection({
   currentUserId,
   isReviewsLoading,
   isAddingReview,
+  isUpdatingReview,
+  isDeletingReview,
   onDraftReviewChange,
   onSubmit,
+  onUpdateReview,
+  onDeleteReview,
 }: BookReviewsSectionProps) {
+  const myReview = useMemo(
+    () => reviews?.find((review) => currentUserId && review.userId === currentUserId),
+    [currentUserId, reviews]
+  );
+  const hasMyReview = Boolean(myReview);
+  const [myReviewDraft, setMyReviewDraft] = useState<string | null>(null);
+  const [isEditingMyReview, setIsEditingMyReview] = useState(false);
+
   return (
     <Card>
       <CardHeader>
@@ -36,11 +52,17 @@ export function BookReviewsSection({
           <Textarea
             placeholder="Write your review..."
             value={draftReview}
+            disabled={isAddingReview || hasMyReview}
             onChange={(event) => onDraftReviewChange(event.target.value)}
           />
-          <Button type="submit" disabled={isAddingReview || !draftReview.trim()}>
+          <Button type="submit" disabled={isAddingReview || hasMyReview || !draftReview.trim()}>
             {isAddingReview ? 'Saving...' : 'Add review'}
           </Button>
+          {hasMyReview ? (
+            <p className="text-xs text-muted-foreground">
+              You already have a review for this book. Update or delete it to add a new one.
+            </p>
+          ) : null}
         </form>
 
         {isReviewsLoading ? <LoadingStateCard message="Loading reviews..." /> : null}
@@ -54,7 +76,79 @@ export function BookReviewsSection({
                     ? 'My review'
                     : review.userName?.trim() || review.userEmail || 'Unknown user'}
                 </p>
-                <p className="text-sm text-foreground">{review.text}</p>
+                {review.userId === currentUserId ? (
+                  isEditingMyReview ? (
+                    <form
+                      className="space-y-3"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        onUpdateReview(review.id, (myReviewDraft ?? review.text).trim());
+                        setIsEditingMyReview(false);
+                        setMyReviewDraft(null);
+                      }}
+                    >
+                      <Textarea
+                        value={myReviewDraft ?? review.text}
+                        onChange={(event) => setMyReviewDraft(event.target.value)}
+                        disabled={isUpdatingReview || isDeletingReview}
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          type="submit"
+                          size="sm"
+                          disabled={
+                            isUpdatingReview ||
+                            isDeletingReview ||
+                            !(myReviewDraft ?? review.text).trim() ||
+                            (myReviewDraft ?? review.text).trim() === review.text
+                          }
+                        >
+                          {isUpdatingReview ? 'Saving...' : 'Save changes'}
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          disabled={isUpdatingReview || isDeletingReview}
+                          onClick={() => {
+                            setIsEditingMyReview(false);
+                            setMyReviewDraft(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-foreground">{review.text}</p>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={isUpdatingReview || isDeletingReview}
+                          onClick={() => {
+                            setIsEditingMyReview(true);
+                            setMyReviewDraft(review.text);
+                          }}
+                        >
+                          Edit review
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="danger"
+                          disabled={isUpdatingReview || isDeletingReview}
+                          onClick={() => onDeleteReview(review.id)}
+                        >
+                          {isDeletingReview ? 'Deleting...' : 'Delete review'}
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <p className="text-sm text-foreground">{review.text}</p>
+                )}
                 <p className="mt-2 text-xs text-muted-foreground">
                   {new Date(review.createdAt).toLocaleString()}
                 </p>
@@ -62,7 +156,7 @@ export function BookReviewsSection({
             </Card>
           ))}
           {!isReviewsLoading && (reviews?.length ?? 0) === 0 ? (
-            <EmptyStateCard message="No reviews yet." />
+            <EmptyStateCard message="No reviews yet." className="text-center" />
           ) : null}
         </div>
       </CardContent>
