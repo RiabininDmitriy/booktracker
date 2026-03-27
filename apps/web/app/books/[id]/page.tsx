@@ -5,7 +5,6 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
-import { Button } from '@/components/ui/button';
 import { BookDetailsHero } from '@/components/books/book-details-hero';
 import { BookReviewsSection } from '@/components/books/book-reviews-section';
 import {
