@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ReadingStatusEnum } from '../entities/reading-status.entity';
+import { ReadingStatusListItemDto } from './dto/reading-status-list-item.dto';
 import { ReadingStatusResponseDto } from './dto/reading-status-response.dto';
 import { ReadingStatusesRepository } from './reading-statuses.repository';
 
@@ -14,23 +15,13 @@ export class ReadingStatusesService {
     bookId: string,
     status: ReadingStatusEnum,
   ): Promise<ReadingStatusResponseDto> {
-    const book = await this.readingStatusesRepository.findBookById(bookId);
-    if (!book) {
-      throw new NotFoundException(`Book with id "${bookId}" not found`);
-    }
-
-    await this.readingStatusesRepository.upsertForUserBook(
+    const saved = await this.readingStatusesRepository.setForUserBook(
       userId,
       bookId,
       status,
     );
-
-    const saved = await this.readingStatusesRepository.findByUserAndBook(
-      userId,
-      bookId,
-    );
     if (!saved) {
-      throw new NotFoundException('Reading status was not found after upsert');
+      throw new NotFoundException(`Book with id "${bookId}" not found`);
     }
 
     return {
@@ -39,5 +30,17 @@ export class ReadingStatusesService {
       status: saved.status,
       updatedAt: saved.updatedAt,
     };
+  }
+
+  async listForUser(
+    userId: string,
+    status?: ReadingStatusEnum,
+  ): Promise<ReadingStatusListItemDto[]> {
+    const readingStatuses = await this.readingStatusesRepository.findByUser(
+      userId,
+      status,
+    );
+
+    return readingStatuses.map((item) => new ReadingStatusListItemDto(item));
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { Book } from '../entities/book.entity';
 import {
   ReadingStatus,
@@ -10,23 +10,28 @@ import {
 @Injectable()
 export class ReadingStatusesRepository {
   constructor(
+    private readonly dataSource: DataSource,
     @InjectRepository(ReadingStatus)
     private readonly readingStatusesRepository: Repository<ReadingStatus>,
     @InjectRepository(Book)
     private readonly booksRepository: Repository<Book>,
   ) {}
 
-  findBookById(bookId: string): Promise<Book | null> {
-    return this.booksRepository.findOne({ where: { id: bookId } });
-  }
-
-  upsertForUserBook(
+  setForUserBook(
     userId: string,
     bookId: string,
     status: ReadingStatusEnum,
-  ): Promise<void> {
-    return this.readingStatusesRepository
-      .upsert(
+  ): Promise<ReadingStatus | null> {
+    return this.dataSource.transaction(async (manager) => {
+      const booksRepository = manager.getRepository(Book);
+      const readingStatusesRepository = manager.getRepository(ReadingStatus);
+
+      const bookExists = await booksRepository.exist({ where: { id: bookId } });
+      if (!bookExists) {
+        return null;
+      }
+
+      await readingStatusesRepository.upsert(
         {
           userId,
           bookId,
@@ -35,16 +40,30 @@ export class ReadingStatusesRepository {
         {
           conflictPaths: ['userId', 'bookId'],
         },
-      )
-      .then(() => undefined);
+      );
+
+      return readingStatusesRepository.findOne({
+        where: { userId, bookId },
+      });
+    });
   }
 
-  findByUserAndBook(
+  findByUser(
     userId: string,
-    bookId: string,
-  ): Promise<ReadingStatus | null> {
-    return this.readingStatusesRepository.findOne({
-      where: { userId, bookId },
-    });
+    status?: ReadingStatusEnum,
+  ): Promise<ReadingStatus[]> {
+    const qb = this.readingStatusesRepository
+      .createQueryBuilder('rs')
+      .leftJoinAndSelect('rs.book', 'book')
+      .where('rs.userId = :userId', { userId });
+
+    if (status) {
+      qb.andWhere('rs.status = :status', { status });
+    }
+
+    return qb
+      .orderBy('rs.updatedAt', 'DESC')
+      .addOrderBy('book.title', 'ASC')
+      .getMany();
   }
 }
