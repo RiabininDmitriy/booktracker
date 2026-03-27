@@ -9,6 +9,7 @@ export type CatalogBook = {
   title: string;
   author: string | null;
   coverUrl: string | null;
+  description: string | null;
   avgRating: number | null;
   reviewCount: number;
   createdAt: string;

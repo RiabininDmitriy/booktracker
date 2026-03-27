@@ -127,4 +127,49 @@ test.describe('catalog page', () => {
     await expect(page).toHaveURL(/page=1/);
     await expect(page.getByText('Atomic Habits')).toBeVisible();
   });
+
+  test('opens book details when card is clicked', async ({ context, page }) => {
+    await context.addCookies([
+      { name: 'access_token', value: 'token', url: 'http://localhost:3000' },
+    ]);
+
+    await page.route('**/books?**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: pageOneItems,
+          page: 1,
+          limit: 12,
+          total: 2,
+          totalPages: 1,
+        }),
+      });
+    });
+
+    await page.route('**://localhost:3001/books/1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...pageOneItems[0],
+          description: 'Atomic habits description',
+        }),
+      });
+    });
+
+    await page.route('**://localhost:3001/reviews/book/1', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.goto('/catalog');
+    await page.getByRole('link', { name: /Atomic Habits/i }).click();
+
+    await expect(page).toHaveURL('/books/1');
+    await expect(page.getByText('Book details')).toBeVisible();
+  });
 });

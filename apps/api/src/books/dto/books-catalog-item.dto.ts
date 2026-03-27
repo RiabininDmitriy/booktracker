@@ -6,6 +6,7 @@ export class BooksCatalogItemDto {
   title: string;
   author: string | null;
   coverUrl: string | null;
+  description: string | null;
   avgRating: number | null;
   reviewCount: number;
   createdAt: Date;
@@ -16,6 +17,7 @@ export class BooksCatalogItemDto {
     this.title = book.title;
     this.author = book.author;
     this.coverUrl = book.coverUrl;
+    this.description = book.description;
     this.avgRating = book.avgRating;
     this.reviewCount = book.reviewCount;
     this.createdAt = book.createdAt;
