@@ -7,16 +7,12 @@ import { ReadingStatusesService } from '../../src/reading-statuses/reading-statu
 describe('ReadingStatusesService', () => {
   let service: ReadingStatusesService;
   let readingStatusesRepository: {
-    findBookById: jest.Mock;
-    upsertForUserBook: jest.Mock;
-    findByUserAndBook: jest.Mock;
+    setForUserBook: jest.Mock;
   };
 
   beforeEach(async () => {
     readingStatusesRepository = {
-      findBookById: jest.fn(),
-      upsertForUserBook: jest.fn(),
-      findByUserAndBook: jest.fn(),
+      setForUserBook: jest.fn(),
     };
 
     const testingModule: TestingModule = await Test.createTestingModule({
@@ -33,9 +29,7 @@ describe('ReadingStatusesService', () => {
   });
 
   it('sets and returns saved reading status', async () => {
-    readingStatusesRepository.findBookById.mockResolvedValue({ id: 'book-1' });
-    readingStatusesRepository.upsertForUserBook.mockResolvedValue(undefined);
-    readingStatusesRepository.findByUserAndBook.mockResolvedValue({
+    readingStatusesRepository.setForUserBook.mockResolvedValue({
       userId: 'user-1',
       bookId: 'book-1',
       status: ReadingStatusEnum.PLANNED,
@@ -53,13 +47,11 @@ describe('ReadingStatusesService', () => {
       bookId: 'book-1',
       status: ReadingStatusEnum.PLANNED,
     });
-    expect(readingStatusesRepository.upsertForUserBook).toHaveBeenCalledTimes(
-      1,
-    );
+    expect(readingStatusesRepository.setForUserBook).toHaveBeenCalledTimes(1);
   });
 
   it('throws when book does not exist', async () => {
-    readingStatusesRepository.findBookById.mockResolvedValue(null);
+    readingStatusesRepository.setForUserBook.mockResolvedValue(null);
 
     await expect(
       service.setReadingStatus(
@@ -71,9 +63,7 @@ describe('ReadingStatusesService', () => {
   });
 
   it('throws when row not found after upsert', async () => {
-    readingStatusesRepository.findBookById.mockResolvedValue({ id: 'book-1' });
-    readingStatusesRepository.upsertForUserBook.mockResolvedValue(undefined);
-    readingStatusesRepository.findByUserAndBook.mockResolvedValue(null);
+    readingStatusesRepository.setForUserBook.mockResolvedValue(null);
 
     await expect(
       service.setReadingStatus('user-1', 'book-1', ReadingStatusEnum.READING),

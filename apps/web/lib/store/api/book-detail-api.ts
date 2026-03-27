@@ -7,6 +7,8 @@ type Review = {
   bookId: string;
   text: string;
   createdAt: string;
+  userName: string | null;
+  userEmail: string | null;
 };
 
 type RatingResponse = {

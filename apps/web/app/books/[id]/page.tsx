@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 
 import { BookDetailsHero } from '@/components/books/book-details-hero';
 import { BookReviewsSection } from '@/components/books/book-reviews-section';
+import { ErrorStateCard, LoadingStateCard } from '@/components/ui/state-card';
 import {
   useAddReviewMutation,
   useGetBookByIdQuery,
@@ -16,10 +17,12 @@ import {
   useToggleFavoriteMutation,
   type ReadingStatus,
 } from '@/lib/store/api/book-detail-api';
+import { useAppSelector } from '@/lib/store/hooks';
 
 export default function BookDetailPage() {
   const params = useParams<{ id: string }>();
   const bookId = params?.id;
+  const currentUserId = useAppSelector((state) => state.auth.user?.id);
 
   const [draftReview, setDraftReview] = useState('');
   const [localRating, setLocalRating] = useState<number | null>(null);
@@ -120,8 +123,8 @@ export default function BookDetailPage() {
           </Link>
         </div>
 
-        {isBookLoading ? <p className="text-sm text-muted-foreground">Loading book...</p> : null}
-        {isBookError ? <p className="text-sm text-danger">Failed to load this book.</p> : null}
+        {isBookLoading ? <LoadingStateCard message="Loading book..." /> : null}
+        {isBookError ? <ErrorStateCard message="Failed to load this book." /> : null}
 
         {book ? (
           <BookDetailsHero
@@ -143,6 +146,7 @@ export default function BookDetailPage() {
         <BookReviewsSection
           draftReview={draftReview}
           reviews={reviews}
+          currentUserId={currentUserId}
           isReviewsLoading={isReviewsLoading}
           isAddingReview={isAddingReview}
           onDraftReviewChange={setDraftReview}

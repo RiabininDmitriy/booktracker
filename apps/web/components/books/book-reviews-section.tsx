@@ -2,12 +2,14 @@ import type { FormEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyStateCard, LoadingStateCard } from '@/components/ui/state-card';
 import { Textarea } from '@/components/ui/textarea';
 import type { Review } from '@/lib/store/api/book-detail-api';
 
 type BookReviewsSectionProps = {
   draftReview: string;
   reviews: Review[] | undefined;
+  currentUserId?: string;
   isReviewsLoading: boolean;
   isAddingReview: boolean;
   onDraftReviewChange: (value: string) => void;
@@ -17,6 +19,7 @@ type BookReviewsSectionProps = {
 export function BookReviewsSection({
   draftReview,
   reviews,
+  currentUserId,
   isReviewsLoading,
   isAddingReview,
   onDraftReviewChange,
@@ -40,14 +43,17 @@ export function BookReviewsSection({
           </Button>
         </form>
 
-        {isReviewsLoading ? (
-          <p className="text-sm text-muted-foreground">Loading reviews...</p>
-        ) : null}
+        {isReviewsLoading ? <LoadingStateCard message="Loading reviews..." /> : null}
 
         <div className="space-y-3">
           {(reviews ?? []).map((review) => (
             <Card key={review.id}>
               <CardContent className="pt-6">
+                <p className="mb-2 text-xs font-medium text-muted-foreground">
+                  {review.userId === currentUserId
+                    ? 'My review'
+                    : review.userName?.trim() || review.userEmail || 'Unknown user'}
+                </p>
                 <p className="text-sm text-foreground">{review.text}</p>
                 <p className="mt-2 text-xs text-muted-foreground">
                   {new Date(review.createdAt).toLocaleString()}
@@ -56,7 +62,7 @@ export function BookReviewsSection({
             </Card>
           ))}
           {!isReviewsLoading && (reviews?.length ?? 0) === 0 ? (
-            <p className="text-sm text-muted-foreground">No reviews yet.</p>
+            <EmptyStateCard message="No reviews yet." />
           ) : null}
         </div>
       </CardContent>

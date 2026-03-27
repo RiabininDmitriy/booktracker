@@ -4,7 +4,7 @@ import { Suspense, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { EmptyStateCard, ErrorStateCard } from '@/components/ui/state-card';
 import { CatalogBookCard } from '@/components/catalog/catalog-book-card';
 import { CatalogFilters } from '@/components/catalog/catalog-filters';
 import { CatalogHeader } from '@/components/catalog/catalog-header';
@@ -114,13 +114,7 @@ function CatalogPageContent() {
           {isFetching && !isLoading ? <Badge variant="info">Refreshing</Badge> : null}
         </div>
 
-        {isError ? (
-          <Card>
-            <CardContent className="py-8">
-              <p className="text-sm text-danger">Failed to load catalog. Please try again.</p>
-            </CardContent>
-          </Card>
-        ) : null}
+        {isError ? <ErrorStateCard message="Failed to load catalog. Please try again." /> : null}
 
         {!isError ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -131,11 +125,7 @@ function CatalogPageContent() {
         ) : null}
 
         {!isError && !isLoading && books.length === 0 ? (
-          <Card>
-            <CardContent className="py-8">
-              <p className="text-sm text-muted-foreground">No books match current filters.</p>
-            </CardContent>
-          </Card>
+          <EmptyStateCard message="No books match current filters." />
         ) : null}
 
         <CatalogPagination
