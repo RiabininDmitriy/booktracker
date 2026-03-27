@@ -1,22 +1,31 @@
 'use client';
 
-import { useState } from 'react';
-
-import { SignInCard } from './sign-in-card';
-import { SignUpCard } from './sign-up-card';
+import Link from 'next/link';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function AuthShell() {
-  const [mode, setMode] = useState<'signIn' | 'signUp'>('signIn');
-
   return (
     <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8 md:px-8 md:py-12">
-      <div className="mx-auto flex w-full max-w-6xl justify-center">
-        {mode === 'signIn' ? (
-          <SignInCard onSwitchToSignUp={() => setMode('signUp')} />
-        ) : (
-          <SignUpCard onSwitchToSignIn={() => setMode('signIn')} />
-        )}
-      </div>
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <CardTitle>BookTracker Auth</CardTitle>
+          <CardDescription>Select a flow to continue.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex gap-3">
+          <Link
+            className="inline-flex h-10 flex-1 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
+            href="/sign-in"
+          >
+            Sign in
+          </Link>
+          <Link
+            className="inline-flex h-10 flex-1 items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-medium text-foreground"
+            href="/sign-up"
+          >
+            Sign up
+          </Link>
+        </CardContent>
+      </Card>
     </main>
   );
 }

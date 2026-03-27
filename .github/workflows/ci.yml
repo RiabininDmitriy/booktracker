@@ -44,6 +44,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Playwright browsers
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
       - name: Lint
         run: pnpm lint
 
@@ -75,5 +78,13 @@ jobs:
           NODE_ENV: production
         run: pnpm build
 
-      - name: Test
-        run: pnpm test
+      - name: Web unit tests
+        run: pnpm --filter web test:unit
+
+      - name: Web e2e tests
+        env:
+          PLAYWRIGHT_BASE_URL: http://localhost:3000
+        run: pnpm --filter web test:e2e
+
+      - name: API unit/integration tests
+        run: pnpm --filter api test
