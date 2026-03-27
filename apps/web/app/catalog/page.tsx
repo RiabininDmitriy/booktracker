@@ -33,9 +33,14 @@ function toOrder(value: string | null): CatalogOrder {
   return value === 'asc' || value === 'desc' ? value : 'desc';
 }
 
+function shouldSkipCatalogSsrForE2E(): boolean {
+  // Jest/Vitest: NODE_ENV=test. Playwright runs `next dev` (development) with PLAYWRIGHT_E2E=1 from playwright.config.
+  // Browser `page.route()` does not intercept RSC/server fetch, so we skip SSR and let RTK + stubs load data.
+  return process.env.NODE_ENV === 'test' || process.env.PLAYWRIGHT_E2E === '1';
+}
+
 async function fetchCatalogSsr(query: CatalogQuery): Promise<CatalogResponse | null> {
-  // Keep Playwright network stubs effective in e2e by skipping server-side fetch in test mode.
-  if (process.env.NODE_ENV === 'test') {
+  if (shouldSkipCatalogSsrForE2E()) {
     return null;
   }
 
