@@ -74,7 +74,7 @@ test.describe('auth and route protection', () => {
     await expect(page).toHaveURL('/dashboard');
   });
 
-  test('signs out and blocks dashboard access again', async ({ context, page }) => {
+  test('signs out from my account and blocks dashboard access again', async ({ context, page }) => {
     await context.addCookies([
       {
         name: 'access_token',
@@ -87,7 +87,7 @@ test.describe('auth and route protection', () => {
       await route.fulfill({ status: 200, body: '' });
     });
 
-    await page.goto('/dashboard');
+    await page.goto('/my-account');
     await page.getByTestId('sign-out-button').click();
 
     await expect(page).toHaveURL('/sign-in');

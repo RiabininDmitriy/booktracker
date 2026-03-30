@@ -1,9 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import Link from 'next/link';
 
-import { SignOutButton } from '@/components/auth/sign-out-button';
 import { DashboardReadingColumn } from '@/components/dashboard/dashboard-reading-column';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,28 +30,19 @@ export default function DashboardPage() {
     <main className="min-h-screen bg-background px-4 py-8 md:px-8 md:py-12">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+          <CardHeader className="text-center">
+            <CardTitle className="flex items-center justify-center gap-2">
               <span>Your dashboard</span>
               <Badge variant="info">{(data ?? []).length} books</Badge>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-center">
               Track your reading lists by status and jump to any book details.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex items-center justify-between gap-4">
+          <CardContent className="flex items-center justify-center text-center">
             <p className="text-sm text-muted-foreground">
               Organize your library as Planned, Reading, and Completed.
             </p>
-            <div className="flex items-center gap-2">
-              <Link
-                className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-surface px-4 text-sm font-medium text-foreground"
-                href="/catalog"
-              >
-                Open catalog
-              </Link>
-              <SignOutButton />
-            </div>
           </CardContent>
         </Card>
 
