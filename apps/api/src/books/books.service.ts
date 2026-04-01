@@ -53,13 +53,17 @@ export class BooksService {
       limit,
     });
 
-    // If the local catalog has no matches for a text query, hydrate cache from
-    // OpenLibrary and retry once so users can discover books immediately.
-    if (total === 0 && searchQuery?.trim()) {
+    // If the first page has too few local matches for a text query, hydrate cache from
+    // OpenLibrary and retry once so search isn't limited to pre-seeded local data.
+    const normalizedQuery = searchQuery?.trim();
+    const shouldHydrateFromOpenLibrary =
+      Boolean(normalizedQuery) && page === 1 && total < limit;
+
+    if (shouldHydrateFromOpenLibrary && normalizedQuery) {
       try {
-        await this.search(searchQuery.trim());
+        await this.search(normalizedQuery);
         [books, total] = await this.booksCatalogRepository.findCatalogBooks({
-          searchQuery: searchQuery.trim(),
+          searchQuery: normalizedQuery,
           author,
           sort: query.sort ?? 'createdAt',
           order: query.order ?? 'desc',
