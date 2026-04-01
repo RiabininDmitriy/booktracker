@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
-    "dev:turbo": "next dev --turbopack",
+    "dev": "next dev",
+    "dev:webpack": "next dev --webpack -p 3100",
     "dev:e2e": "PLAYWRIGHT_E2E=1 next dev --webpack",
     "build": "next build",
     "start": "next start",
@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
-    "next": "16.1.6",
+    "next": "16.1.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-redux": "^9.2.0"
@@ -40,7 +40,7 @@
     "@vitest/browser-playwright": "^4.1.2",
     "@vitest/coverage-v8": "^4.1.2",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
+    "eslint-config-next": "16.1.5",
     "jsdom": "^29.0.1",
     "playwright": "^1.58.2",
     "storybook": "^10.3.3",
