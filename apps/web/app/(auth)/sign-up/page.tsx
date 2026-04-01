@@ -1,14 +1,14 @@
 'use client';
 
 import type { FormEvent } from 'react';
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { SignUpCard } from '@/components/auth/sign-up-card';
 import { getApiErrorMessage } from '@/lib/auth/api-error';
 import { useRegisterMutation } from '@/lib/store/api/auth-api';
 
-export default function SignUpPage() {
+function SignUpPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [register, { isLoading }] = useRegisterMutation();
@@ -64,5 +64,17 @@ export default function SignUpPage() {
         />
       </div>
     </main>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-background px-4 py-8 md:px-8 md:py-12" />
+      }
+    >
+      <SignUpPageContent />
+    </Suspense>
   );
 }
