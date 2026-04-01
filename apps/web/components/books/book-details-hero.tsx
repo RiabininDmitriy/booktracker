@@ -69,10 +69,15 @@ export function BookDetailsHero({
                 My reading status
               </p>
               <Select
-                value={localStatus ?? 'planned'}
-                onChange={(event) => onStatusChange(event.target.value as ReadingStatus)}
+                value={localStatus ?? ''}
+                onChange={(event) => {
+                  const selectedStatus = event.target.value;
+                  if (!selectedStatus) return;
+                  onStatusChange(selectedStatus as ReadingStatus);
+                }}
                 disabled={isSavingStatus}
               >
+                <option value="">Select status...</option>
                 {readingStatusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}

@@ -2,18 +2,15 @@
 
 import type { FormEvent } from 'react';
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import { SignUpCard } from '@/components/auth/sign-up-card';
 import { getApiErrorMessage } from '@/lib/auth/api-error';
-import { setAccessTokenCookie } from '@/lib/auth/session';
 import { useRegisterMutation } from '@/lib/store/api/auth-api';
-import { setCredentials } from '@/lib/store/features/auth-slice';
-import { useAppDispatch } from '@/lib/store/hooks';
 
 export default function SignUpPage() {
-  const dispatch = useAppDispatch();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [register, { isLoading }] = useRegisterMutation();
 
   const [name, setName] = useState('');
@@ -37,9 +34,13 @@ export default function SignUpPage() {
         password,
         name: name.trim() || undefined,
       }).unwrap();
-      dispatch(setCredentials({ accessToken: response.accessToken, user: response.user }));
-      setAccessTokenCookie(response.accessToken);
-      router.push('/dashboard');
+      if (!response.user) {
+        setError('Unexpected auth response. Please try again.');
+        return;
+      }
+      const nextPath = searchParams.get('next');
+      const destination = nextPath?.startsWith('/') ? nextPath : '/dashboard';
+      router.replace(destination);
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, 'Unable to create account. Please try again.'));
     }

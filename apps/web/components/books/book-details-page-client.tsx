@@ -3,12 +3,13 @@
 import type { FormEvent } from 'react';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 
 import { BookDetailsHero } from '@/components/books/book-details-hero';
 import { BookReviewsSection } from '@/components/books/book-reviews-section';
 import { ErrorStateCard, LoadingStateCard } from '@/components/ui/state-card';
+import { useMeQuery } from '@/lib/store/api/auth-api';
 import {
+  type ReadingStatus,
   useAddReviewMutation,
   useDeleteReviewMutation,
   useGetBookByIdQuery,
@@ -17,10 +18,7 @@ import {
   useSetReadingStatusMutation,
   useToggleFavoriteMutation,
   useUpdateReviewMutation,
-  type ReadingStatus,
 } from '@/lib/store/api/book-detail-api';
-import { useMeQuery } from '@/lib/store/api/auth-api';
-import { useAppSelector } from '@/lib/store/hooks';
 
 const readingStatusOrder: Record<ReadingStatus, number> = {
   planned: 0,
@@ -28,12 +26,13 @@ const readingStatusOrder: Record<ReadingStatus, number> = {
   completed: 2,
 };
 
-export default function BookDetailPage() {
-  const params = useParams<{ id: string }>();
-  const bookId = params?.id;
-  const authUserId = useAppSelector((state) => state.auth.user?.id);
+type BookDetailsPageClientProps = {
+  bookId: string;
+};
+
+export function BookDetailsPageClient({ bookId }: BookDetailsPageClientProps) {
   const { data: me } = useMeQuery();
-  const currentUserId = authUserId ?? me?.id;
+  const currentUserId = me?.id;
 
   const [draftReview, setDraftReview] = useState('');
   const [localRating, setLocalRating] = useState<number | null>(null);
@@ -45,12 +44,8 @@ export default function BookDetailPage() {
     data: book,
     isLoading: isBookLoading,
     isError: isBookError,
-  } = useGetBookByIdQuery(bookId ?? '', {
-    skip: !bookId,
-  });
-  const { data: reviews, isLoading: isReviewsLoading } = useGetReviewsByBookQuery(bookId ?? '', {
-    skip: !bookId,
-  });
+  } = useGetBookByIdQuery(bookId);
+  const { data: reviews, isLoading: isReviewsLoading } = useGetReviewsByBookQuery(bookId);
 
   const [setRating, { isLoading: isSavingRating }] = useSetRatingMutation();
   const [setReadingStatus, { isLoading: isSavingStatus }] = useSetReadingStatusMutation();
@@ -71,8 +66,6 @@ export default function BookDetailPage() {
   }, [reviews]);
 
   const handleRating = async (value: number) => {
-    if (!bookId) return;
-
     try {
       const response = await setRating({ bookId, value }).unwrap();
       setLocalRating(response.avgRating ?? value);
@@ -83,12 +76,13 @@ export default function BookDetailPage() {
   };
 
   const handleStatus = async (status: ReadingStatus) => {
-    if (!bookId) return;
     if (readingStatusOrder[status] < readingStatusOrder[effectiveStatus]) {
       setFeedback('Status can only move forward: planned -> reading -> completed.');
       return;
     }
-    if (status === effectiveStatus) {
+
+    const hasLocalStatus = localStatus !== null;
+    if (hasLocalStatus && status === effectiveStatus) {
       return;
     }
 
@@ -102,8 +96,6 @@ export default function BookDetailPage() {
   };
 
   const handleToggleFavorite = async () => {
-    if (!bookId) return;
-
     try {
       const response = await toggleFavorite({ bookId }).unwrap();
       setIsFavorite(response.isFavorite);
@@ -115,7 +107,7 @@ export default function BookDetailPage() {
 
   const handleAddReview = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!bookId || !draftReview.trim()) return;
+    if (!draftReview.trim()) return;
     if (hasMyReview) {
       setFeedback('You already reviewed this book.');
       return;
@@ -148,14 +140,6 @@ export default function BookDetailPage() {
       setFeedback('Unable to delete review.');
     }
   };
-
-  if (!bookId) {
-    return (
-      <main className="min-h-screen bg-background px-4 py-8 md:px-8 md:py-12">
-        <p className="text-sm text-danger">Missing book id.</p>
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 md:px-8 md:py-12">

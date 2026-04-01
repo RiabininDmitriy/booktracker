@@ -9,7 +9,6 @@ type AuthUser = {
 };
 
 type AuthResponse = {
-  accessToken: string;
   user: AuthUser;
 };
 

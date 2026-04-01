@@ -6,25 +6,12 @@ import { DashboardReadingColumn } from '@/components/dashboard/dashboard-reading
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ErrorStateCard, LoadingStateCard } from '@/components/ui/state-card';
-import type { DashboardReadingItem } from '@/lib/store/api/dashboard-api';
+import { groupReadingStatuses } from '@/lib/dashboard/group-reading-statuses';
 import { useGetMyReadingStatusesQuery } from '@/lib/store/api/dashboard-api';
 
 export default function DashboardPage() {
   const { data, isLoading, isError } = useGetMyReadingStatusesQuery();
-
-  const grouped = useMemo(() => {
-    const initial = {
-      planned: [] as DashboardReadingItem[],
-      reading: [] as DashboardReadingItem[],
-      completed: [] as DashboardReadingItem[],
-    };
-
-    for (const item of data ?? []) {
-      initial[item.status].push(item);
-    }
-
-    return initial;
-  }, [data]);
+  const grouped = useMemo(() => groupReadingStatuses(data), [data]);
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 md:px-8 md:py-12">

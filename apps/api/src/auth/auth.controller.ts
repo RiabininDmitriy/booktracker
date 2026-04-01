@@ -19,6 +19,8 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 
 const REFRESH_COOKIE_NAME = 'refresh_token';
 const REFRESH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const ACCESS_COOKIE_NAME = 'access_token';
+const ACCESS_COOKIE_MAX_AGE_MS = 15 * 60 * 1000;
 
 @Controller('auth')
 export class AuthController {
@@ -41,6 +43,7 @@ export class AuthController {
   ): Promise<AuthResponseDto> {
     const result = await this.authService.register(dto);
     this.setRefreshCookie(res, req, result.refreshToken);
+    this.setAccessCookie(res, req, result.accessToken);
     return this.toAuthResponse(result.accessToken, result.user);
   }
 
@@ -52,6 +55,7 @@ export class AuthController {
   ): Promise<AuthResponseDto> {
     const result = await this.authService.login(dto);
     this.setRefreshCookie(res, req, result.refreshToken);
+    this.setAccessCookie(res, req, result.accessToken);
     return this.toAuthResponse(result.accessToken, result.user);
   }
 
@@ -69,6 +73,7 @@ export class AuthController {
 
     const result = await this.authService.refresh(refreshToken);
     this.setRefreshCookie(res, req, result.refreshToken);
+    this.setAccessCookie(res, req, result.accessToken);
     return this.toAuthResponse(result.accessToken, result.user);
   }
 
@@ -82,6 +87,7 @@ export class AuthController {
     ];
     await this.authService.logout(refreshToken);
     res.clearCookie(REFRESH_COOKIE_NAME, this.refreshCookieOptions(req));
+    res.clearCookie(ACCESS_COOKIE_NAME, this.accessCookieOptions(req));
   }
 
   private setRefreshCookie(
@@ -96,6 +102,14 @@ export class AuthController {
     );
   }
 
+  private setAccessCookie(
+    res: Response,
+    req: Request,
+    accessToken: string,
+  ): void {
+    res.cookie(ACCESS_COOKIE_NAME, accessToken, this.accessCookieOptions(req));
+  }
+
   private refreshCookieOptions(req: Request): CookieOptions {
     const isProduction = req.app.get('env') === 'production';
 
@@ -105,6 +119,18 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: REFRESH_COOKIE_MAX_AGE_MS,
       path: '/auth',
+    };
+  }
+
+  private accessCookieOptions(req: Request): CookieOptions {
+    const isProduction = req.app.get('env') === 'production';
+
+    return {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: ACCESS_COOKIE_MAX_AGE_MS,
+      path: '/',
     };
   }
 
