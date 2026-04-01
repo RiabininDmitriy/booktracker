@@ -152,7 +152,7 @@ export function CatalogPageClient({
         <div className="relative min-h-[12rem]">
           {isCatalogBusy ? (
             <div
-              className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 rounded-lg bg-background/55 backdrop-blur-sm"
+              className="absolute inset-0 z-20 flex flex-col items-center justify-start gap-3 rounded-lg bg-background/55 pt-14 backdrop-blur-sm"
               aria-busy="true"
               aria-label="Updating catalog"
               role="status"
