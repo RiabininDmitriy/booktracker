@@ -3,9 +3,8 @@
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
-import { clearAccessTokenCookie } from '@/lib/auth/session';
+import { baseApi } from '@/lib/store/api/base-api';
 import { useLogoutMutation } from '@/lib/store/api/auth-api';
-import { clearCredentials } from '@/lib/store/features/auth-slice';
 import { useAppDispatch } from '@/lib/store/hooks';
 
 export function SignOutButton() {
@@ -15,13 +14,12 @@ export function SignOutButton() {
 
   const handleSignOut = async () => {
     try {
+      dispatch(baseApi.util.resetApiState());
       await logout().unwrap();
+      router.replace('/sign-in');
+      router.refresh();
     } catch {
-      // Ignore network failures and still clear local auth state.
-    } finally {
-      clearAccessTokenCookie();
-      dispatch(clearCredentials());
-      router.push('/sign-in');
+      // If logout fails, keep user on current page; cookie/session may still be valid.
     }
   };
 

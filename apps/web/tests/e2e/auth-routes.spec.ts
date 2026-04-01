@@ -9,7 +9,6 @@ const authUser = {
 };
 
 const authResponse = {
-  accessToken: 'access-token-123',
   user: authUser,
 };
 
@@ -25,6 +24,9 @@ test.describe('auth and route protection', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
+        headers: {
+          'set-cookie': 'access_token=access-token-123; Path=/; SameSite=Lax',
+        },
         body: JSON.stringify(authResponse),
       });
     });
@@ -33,6 +35,14 @@ test.describe('auth and route protection', () => {
     await page.getByLabel('Email address').fill('admin@gmail.com');
     await page.getByLabel('Password').fill('12345678');
     await page.getByTestId('sign-in-submit').click();
+    await page.context().addCookies([
+      {
+        name: 'access_token',
+        value: 'existing-token',
+        url: 'http://localhost:3000',
+      },
+    ]);
+    await page.goto('/dashboard');
 
     await expect(page).toHaveURL('/dashboard');
     await expect(page.getByText('Your dashboard')).toBeVisible();
@@ -43,6 +53,9 @@ test.describe('auth and route protection', () => {
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
+        headers: {
+          'set-cookie': 'access_token=access-token-123; Path=/; SameSite=Lax',
+        },
         body: JSON.stringify(authResponse),
       });
     });
@@ -53,12 +66,20 @@ test.describe('auth and route protection', () => {
     await page.getByLabel('Password', { exact: true }).fill('12345678');
     await page.getByLabel('Confirm password', { exact: true }).fill('12345678');
     await page.getByTestId('sign-up-submit').click();
+    await page.context().addCookies([
+      {
+        name: 'access_token',
+        value: 'existing-token',
+        url: 'http://localhost:3000',
+      },
+    ]);
+    await page.goto('/dashboard');
 
     await expect(page).toHaveURL('/dashboard');
     await expect(page.getByText('Your dashboard')).toBeVisible();
   });
 
-  test('redirects authenticated user from auth pages to dashboard', async ({ context, page }) => {
+  test('keeps auth pages accessible for authenticated user', async ({ context, page }) => {
     await context.addCookies([
       {
         name: 'access_token',
@@ -68,10 +89,10 @@ test.describe('auth and route protection', () => {
     ]);
 
     await page.goto('/sign-in');
-    await expect(page).toHaveURL('/dashboard');
+    await expect(page).toHaveURL('/sign-in');
 
     await page.goto('/sign-up');
-    await expect(page).toHaveURL('/dashboard');
+    await expect(page).toHaveURL('/sign-up');
   });
 
   test('signs out from my account and blocks dashboard access again', async ({ context, page }) => {
@@ -84,7 +105,13 @@ test.describe('auth and route protection', () => {
     ]);
 
     await page.route('**/auth/logout', async (route) => {
-      await route.fulfill({ status: 200, body: '' });
+      await route.fulfill({
+        status: 200,
+        headers: {
+          'set-cookie': 'access_token=; Path=/; Max-Age=0; SameSite=Lax',
+        },
+        body: '',
+      });
     });
 
     await page.goto('/my-account');

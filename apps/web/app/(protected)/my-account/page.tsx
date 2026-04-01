@@ -2,8 +2,8 @@
 
 import { SignOutButton } from '@/components/auth/sign-out-button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useMeQuery } from '@/lib/store/api/auth-api';
 import { LoadingStateCard } from '@/components/ui/state-card';
+import { useMeQuery } from '@/lib/store/api/auth-api';
 
 export default function MyAccountPage() {
   const { data: me, isLoading, isError } = useMeQuery();

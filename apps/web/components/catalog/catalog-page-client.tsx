@@ -10,48 +10,19 @@ import { CatalogPagination } from '@/components/catalog/catalog-pagination';
 import { Badge } from '@/components/ui/badge';
 import { EmptyStateCard, ErrorStateCard } from '@/components/ui/state-card';
 import {
-  useGetCatalogQuery,
-  type CatalogOrder,
-  type CatalogQuery,
-  type CatalogResponse,
-  type CatalogSort,
-} from '@/lib/store/api/books-api';
+  isSameCatalogQuery,
+  toOrder,
+  toPositiveInt,
+  toSort,
+  type CatalogPageQuery,
+} from '@/lib/catalog/catalog-query';
+import { useGetCatalogQuery, type CatalogResponse } from '@/lib/store/api/books-api';
 
 type CatalogPageClientProps = {
   initialData: CatalogResponse | null;
-  initialQuery: Required<Pick<CatalogQuery, 'page' | 'limit' | 'sort' | 'order'>> &
-    Pick<CatalogQuery, 'query' | 'author'>;
+  initialQuery: CatalogPageQuery;
   initialError: boolean;
 };
-
-function toPositiveInt(value: string | null, fallback: number): number {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function toSort(value: string | null): CatalogSort {
-  return value === 'rating' || value === 'title' || value === 'createdAt' ? value : 'title';
-}
-
-function toOrder(value: string | null): CatalogOrder {
-  return value === 'asc' || value === 'desc' ? value : 'desc';
-}
-
-function isSameQuery(
-  query: Required<Pick<CatalogQuery, 'page' | 'limit' | 'sort' | 'order'>> &
-    Pick<CatalogQuery, 'query' | 'author'>,
-  other: Required<Pick<CatalogQuery, 'page' | 'limit' | 'sort' | 'order'>> &
-    Pick<CatalogQuery, 'query' | 'author'>
-): boolean {
-  return (
-    query.page === other.page &&
-    query.limit === other.limit &&
-    query.sort === other.sort &&
-    query.order === other.order &&
-    (query.query ?? '') === (other.query ?? '') &&
-    (query.author ?? '') === (other.author ?? '')
-  );
-}
 
 export function CatalogPageClient({
   initialData,
@@ -82,7 +53,7 @@ export function CatalogPageClient({
     [author, limit, order, page, query, sort]
   );
 
-  const hasMatchingSsrData = Boolean(initialData && isSameQuery(currentQuery, initialQuery));
+  const hasMatchingSsrData = Boolean(initialData && isSameCatalogQuery(currentQuery, initialQuery));
   const {
     data: liveData,
     isLoading: isLiveLoading,
