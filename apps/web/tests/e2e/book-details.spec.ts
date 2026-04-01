@@ -30,7 +30,29 @@ test.describe('book details page', () => {
       { name: 'access_token', value: 'token', url: 'http://localhost:3000' },
     ]);
 
-    await page.route(`**://localhost:3001/books/${bookId}`, async (route) => {
+    await page.route('**/auth/me', async (route) => {
+      if (!route.request().url().includes(':3001/')) {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'user-1',
+          email: 'admin@gmail.com',
+          name: 'Admin',
+          role: 'ADMIN',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        }),
+      });
+    });
+
+    await page.route('**/books/**', async (route) => {
+      if (!route.request().url().includes(':3001/')) {
+        await route.fallback();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -38,7 +60,11 @@ test.describe('book details page', () => {
       });
     });
 
-    await page.route(`**://localhost:3001/reviews/book/${bookId}`, async (route) => {
+    await page.route('**/reviews/book/**', async (route) => {
+      if (!route.request().url().includes(':3001/')) {
+        await route.fallback();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -61,7 +87,11 @@ test.describe('book details page', () => {
     let statusRequested = false;
     let favoriteRequested = false;
 
-    await page.route(`**://localhost:3001/ratings/${bookId}`, async (route) => {
+    await page.route('**/ratings/**', async (route) => {
+      if (!route.request().url().includes(':3001/')) {
+        await route.fallback();
+        return;
+      }
       ratingRequested = true;
       await route.fulfill({
         status: 200,
@@ -75,7 +105,11 @@ test.describe('book details page', () => {
       });
     });
 
-    await page.route(`**://localhost:3001/reading-statuses/${bookId}`, async (route) => {
+    await page.route('**/reading-statuses/**', async (route) => {
+      if (!route.request().url().includes(':3001/')) {
+        await route.fallback();
+        return;
+      }
       statusRequested = true;
       await route.fulfill({
         status: 200,
@@ -89,7 +123,11 @@ test.describe('book details page', () => {
       });
     });
 
-    await page.route(`**://localhost:3001/favorites/${bookId}/toggle`, async (route) => {
+    await page.route('**/favorites/**/toggle', async (route) => {
+      if (!route.request().url().includes(':3001/')) {
+        await route.fallback();
+        return;
+      }
       favoriteRequested = true;
       await route.fulfill({
         status: 200,
@@ -116,7 +154,28 @@ test.describe('book details page', () => {
   test('submits a review', async ({ page }) => {
     let reviewRequested = false;
 
-    await page.route(`**://localhost:3001/reviews/${bookId}`, async (route) => {
+    await page.route('**/reviews/book/**', async (route) => {
+      if (!route.request().url().includes(':3001/')) {
+        await route.fallback();
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/reviews/**', async (route) => {
+      if (!route.request().url().includes(':3001/')) {
+        await route.fallback();
+        return;
+      }
+      if (route.request().method() !== 'POST') {
+        await route.fallback();
+        return;
+      }
       reviewRequested = true;
       await route.fulfill({
         status: 201,

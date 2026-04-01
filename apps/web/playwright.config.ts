@@ -18,7 +18,11 @@ export default defineConfig({
     reuseExistingServer: false,
     timeout: 120_000,
     // So Server Components skip API fetch; e2e mocks only apply to browser requests.
-    env: { ...process.env, PLAYWRIGHT_E2E: '1' },
+    env: {
+      ...process.env,
+      PLAYWRIGHT_E2E: '1',
+      NEXT_PUBLIC_PLAYWRIGHT_E2E: '1',
+    },
   },
   projects: [
     {

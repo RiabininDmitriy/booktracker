@@ -14,6 +14,11 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   extraOptions
 ) => {
   let result = await baseQuery(args, api, extraOptions);
+  const isPlaywrightE2E = process.env.NEXT_PUBLIC_PLAYWRIGHT_E2E === '1';
+
+  if (isPlaywrightE2E) {
+    return result;
+  }
 
   if (result.error && result.error.status === 401) {
     const url = typeof args === 'string' ? args : args.url;

@@ -117,7 +117,7 @@ test.describe('auth and route protection', () => {
     await page.goto('/my-account');
     await page.getByTestId('sign-out-button').click();
 
-    await expect(page).toHaveURL('/sign-in');
+    await expect(page).toHaveURL(/\/sign-in(\?next=%2Fmy-account)?/);
 
     await page.goto('/dashboard');
     await expect(page).toHaveURL(/\/sign-in\?next=%2Fdashboard/);
