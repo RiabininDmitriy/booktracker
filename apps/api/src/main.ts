@@ -3,15 +3,17 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { configure as serverlessExpress } from '@vendia/serverless-express';
-import type { Callback, Context, Handler } from 'aws-lambda';
+import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2, Context, Handler } from 'aws-lambda';
 import { ValidationError } from 'class-validator';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
-let server: Handler;
+type LambdaHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>;
 
-async function setupApp(app: INestApplication) {
+let server: LambdaHandler;
+
+function setupApp(app: INestApplication) {
   const frontendOrigin = process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000';
 
   app.enableCors({
@@ -51,21 +53,23 @@ async function setupApp(app: INestApplication) {
   return app;
 }
 
-export const handler: Handler = async (event: any, context: Context, callback: Callback) => {
+export const handler: LambdaHandler = async (event: APIGatewayProxyEventV2, context: Context) => {
   if (!server) {
     const app = await NestFactory.create(AppModule);
-    await setupApp(app);
+    setupApp(app);
     await app.init();
-    const expressApp = app.getHttpAdapter().getInstance();
-    server = serverlessExpress({ app: expressApp });
+    const expressApp: unknown = app.getHttpAdapter().getInstance();
+    server = serverlessExpress({
+      app: expressApp as Parameters<typeof serverlessExpress>[0]['app'],
+    }) as LambdaHandler;
   }
-  return server(event, context, callback);
+  return server(event, context);
 };
 
 if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
   async function bootstrap() {
     const app = await NestFactory.create(AppModule);
-    await setupApp(app);
+    setupApp(app);
     const configService = app.get(ConfigService);
     const port = configService.get<number>('PORT', 3001);
     await app.listen(port);
