@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { configure as serverlessExpress } from '@vendia/serverless-express';
-import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2, Context, Handler } from 'aws-lambda';
+import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2, Callback, Context, Handler } from 'aws-lambda';
 import { ValidationError } from 'class-validator';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
@@ -53,17 +53,28 @@ function setupApp(app: INestApplication) {
   return app;
 }
 
-export const handler: LambdaHandler = async (event: APIGatewayProxyEventV2, context: Context) => {
-  if (!server) {
-    const app = await NestFactory.create(AppModule);
-    setupApp(app);
-    await app.init();
-    const expressApp: unknown = app.getHttpAdapter().getInstance();
-    server = serverlessExpress({
-      app: expressApp as Parameters<typeof serverlessExpress>[0]['app'],
-    }) as LambdaHandler;
-  }
-  return server(event, context);
+export const handler: LambdaHandler = (
+  event: APIGatewayProxyEventV2,
+  context: Context,
+  callback: Callback<APIGatewayProxyResultV2>,
+) => {
+  void (async () => {
+    try {
+      if (!server) {
+        const app = await NestFactory.create(AppModule);
+        setupApp(app);
+        await app.init();
+        const expressApp: unknown = app.getHttpAdapter().getInstance();
+        server = serverlessExpress({
+          app: expressApp as Parameters<typeof serverlessExpress>[0]['app'],
+        }) as LambdaHandler;
+      }
+
+      await server(event, context, callback);
+    } catch (error) {
+      callback(error as Error);
+    }
+  })();
 };
 
 if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
