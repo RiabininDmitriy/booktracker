@@ -89,6 +89,8 @@ export class ReviewsService {
       bookId: review.bookId,
       text: review.text,
       createdAt: review.createdAt,
+      userName: review.user?.name ?? null,
+      userEmail: review.user?.email ?? null,
     };
   }
 }

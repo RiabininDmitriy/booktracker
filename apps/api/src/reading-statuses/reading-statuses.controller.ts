@@ -1,8 +1,10 @@
 import {
   Body,
   Controller,
+  Get,
   Param,
   ParseUUIDPipe,
+  Query,
   Put,
   UnauthorizedException,
   UseGuards,
@@ -10,6 +12,8 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ListReadingStatusesDto } from './dto/list-reading-statuses.dto';
+import { ReadingStatusListItemDto } from './dto/reading-status-list-item.dto';
 import { ReadingStatusResponseDto } from './dto/reading-status-response.dto';
 import { UpsertReadingStatusDto } from './dto/upsert-reading-status.dto';
 import { ReadingStatusesService } from './reading-statuses.service';
@@ -22,6 +26,18 @@ export class ReadingStatusesController {
   constructor(
     private readonly readingStatusesService: ReadingStatusesService,
   ) {}
+
+  @Get('me')
+  listMyReadingStatuses(
+    @CurrentUser() user: RequestUser | undefined,
+    @Query() query: ListReadingStatusesDto,
+  ): Promise<ReadingStatusListItemDto[]> {
+    if (!user) {
+      throw new UnauthorizedException('Missing user context');
+    }
+
+    return this.readingStatusesService.listForUser(user.id, query.status);
+  }
 
   @Put(':bookId')
   setReadingStatus(

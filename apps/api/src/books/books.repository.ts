@@ -19,6 +19,10 @@ export class BooksRepository {
     private readonly repository: Repository<Book>,
   ) {}
 
+  findById(bookId: string): Promise<Book | null> {
+    return this.repository.findOne({ where: { id: bookId } });
+  }
+
   findCatalogBooks(options: CatalogQueryOptions): Promise<[Book[], number]> {
     const sortMap = {
       rating: 'book.avgRating',

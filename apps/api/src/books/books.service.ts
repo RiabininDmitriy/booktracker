@@ -1,4 +1,9 @@
-import { BadGatewayException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadGatewayException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { AxiosError } from 'axios';
 import { firstValueFrom } from 'rxjs';
@@ -39,7 +44,7 @@ export class BooksService {
   async list(query: ListBooksDto): Promise<BooksCatalogResponseDto> {
     const { page, limit, query: searchQuery, author } = query;
     const offset = (page - 1) * limit;
-    const [books, total] = await this.booksCatalogRepository.findCatalogBooks({
+    let [books, total] = await this.booksCatalogRepository.findCatalogBooks({
       searchQuery,
       author,
       sort: query.sort ?? 'createdAt',
@@ -48,6 +53,31 @@ export class BooksService {
       limit,
     });
 
+    // If the first page has too few local matches for a text query, hydrate cache from
+    // OpenLibrary and retry once so search isn't limited to pre-seeded local data.
+    const normalizedQuery = searchQuery?.trim();
+    const shouldHydrateFromOpenLibrary =
+      Boolean(normalizedQuery) && page === 1 && total < limit;
+
+    if (shouldHydrateFromOpenLibrary && normalizedQuery) {
+      try {
+        await this.search(normalizedQuery);
+        [books, total] = await this.booksCatalogRepository.findCatalogBooks({
+          searchQuery: normalizedQuery,
+          author,
+          sort: query.sort ?? 'createdAt',
+          order: query.order ?? 'desc',
+          offset,
+          limit,
+        });
+      } catch (error) {
+        const openLibraryError = error as Error;
+        this.logger.warn(
+          `Catalog fallback search failed: ${openLibraryError.message}`,
+        );
+      }
+    }
+
     return {
       items: books.map((book) => new BooksCatalogItemDto(book)),
       page,
@@ -55,6 +85,16 @@ export class BooksService {
       total,
       totalPages: total === 0 ? 0 : Math.ceil(total / limit),
     };
+  }
+
+  async findById(bookId: string): Promise<BooksCatalogItemDto> {
+    const book = await this.booksCatalogRepository.findById(bookId);
+
+    if (!book) {
+      throw new NotFoundException('Book not found');
+    }
+
+    return new BooksCatalogItemDto(book);
   }
 
   async search(query: string): Promise<BookSearchResultDto[]> {
