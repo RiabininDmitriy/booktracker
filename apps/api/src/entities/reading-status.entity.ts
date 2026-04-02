@@ -4,6 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { Book } from './book.entity';
@@ -16,6 +17,7 @@ export enum ReadingStatusEnum {
 }
 
 @Entity('reading_statuses')
+@Unique(['userId', 'bookId'])
 export class ReadingStatus {
   @PrimaryGeneratedColumn('uuid')
   id: string;

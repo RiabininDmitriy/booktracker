@@ -1,4 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Book } from '../entities/book.entity';
 import { ReadingStatusEnum } from '../entities/reading-status.entity';
 import { ReadingStatusListItemDto } from './dto/reading-status-list-item.dto';
 import { ReadingStatusResponseDto } from './dto/reading-status-response.dto';
@@ -8,6 +11,8 @@ import { ReadingStatusesRepository } from './reading-statuses.repository';
 export class ReadingStatusesService {
   constructor(
     private readonly readingStatusesRepository: ReadingStatusesRepository,
+    @InjectRepository(Book)
+    private readonly booksRepository: Repository<Book>,
   ) {}
 
   async setReadingStatus(
@@ -15,14 +20,18 @@ export class ReadingStatusesService {
     bookId: string,
     status: ReadingStatusEnum,
   ): Promise<ReadingStatusResponseDto> {
+    const bookExists = await this.booksRepository.exist({
+      where: { id: bookId },
+    });
+    if (!bookExists) {
+      throw new NotFoundException(`Book with id "${bookId}" not found`);
+    }
+
     const saved = await this.readingStatusesRepository.setForUserBook(
       userId,
       bookId,
       status,
     );
-    if (!saved) {
-      throw new NotFoundException(`Book with id "${bookId}" not found`);
-    }
 
     return {
       userId: saved.userId,

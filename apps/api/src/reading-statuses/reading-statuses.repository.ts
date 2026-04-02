@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
-import { Book } from '../entities/book.entity';
+import { Repository } from 'typeorm';
 import {
   ReadingStatus,
   ReadingStatusEnum,
@@ -10,42 +9,31 @@ import {
 @Injectable()
 export class ReadingStatusesRepository {
   constructor(
-    private readonly dataSource: DataSource,
     @InjectRepository(ReadingStatus)
     private readonly readingStatusesRepository: Repository<ReadingStatus>,
-    @InjectRepository(Book)
-    private readonly booksRepository: Repository<Book>,
   ) {}
 
-  setForUserBook(
+  async setForUserBook(
     userId: string,
     bookId: string,
     status: ReadingStatusEnum,
-  ): Promise<ReadingStatus | null> {
-    return this.dataSource.transaction(async (manager) => {
-      const booksRepository = manager.getRepository(Book);
-      const readingStatusesRepository = manager.getRepository(ReadingStatus);
+  ): Promise<ReadingStatus> {
+    await this.readingStatusesRepository.upsert(
+      {
+        userId,
+        bookId,
+        status,
+      },
+      {
+        conflictPaths: ['userId', 'bookId'],
+      },
+    );
 
-      const bookExists = await booksRepository.exist({ where: { id: bookId } });
-      if (!bookExists) {
-        return null;
-      }
-
-      await readingStatusesRepository.upsert(
-        {
-          userId,
-          bookId,
-          status,
-        },
-        {
-          conflictPaths: ['userId', 'bookId'],
-        },
-      );
-
-      return readingStatusesRepository.findOne({
-        where: { userId, bookId },
-      });
+    const result = await this.readingStatusesRepository.findOne({
+      where: { userId, bookId },
     });
+
+    return result!;
   }
 
   findByUser(
