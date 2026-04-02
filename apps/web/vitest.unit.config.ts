@@ -9,7 +9,8 @@ export default defineConfig({
   },
   test: {
     name: 'unit',
-    environment: 'node',
+    environment: 'jsdom',
+    setupFiles: ['./tests/unit/setup.ts'],
     include: ['tests/unit/**/*.test.ts', 'tests/unit/**/*.test.tsx'],
     exclude: ['node_modules/**', '.next/**'],
     coverage: {

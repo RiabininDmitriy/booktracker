@@ -1,15 +1,7 @@
-import {
-  ArgumentsHost,
-  Catch,
-  ExceptionFilter,
-  HttpException,
-  HttpStatus,
-} from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
-type ErrorDetails =
-  | { field: string; messages: string[] }
-  | { message: string; messages: string[] };
+type ErrorDetails = { field: string; messages: string[] } | { message: string; messages: string[] };
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -17,18 +9,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const { response, timestamp, path } = this.getHttpContextAndMeta(host);
 
     if (exception instanceof HttpException) {
-      const payload = this.buildHttpExceptionPayload(
-        exception,
-        timestamp,
-        path,
-      );
+      const payload = this.buildHttpExceptionPayload(exception, timestamp, path);
       response.status(payload.statusCode).json(payload);
       return;
     }
 
-    response
-      .status(HttpStatus.INTERNAL_SERVER_ERROR)
-      .json(this.buildInternalServerErrorPayload(timestamp, path));
+    response.status(HttpStatus.INTERNAL_SERVER_ERROR).json(this.buildInternalServerErrorPayload(timestamp, path));
   }
 
   private getHttpContextAndMeta(host: ArgumentsHost): {
@@ -81,9 +67,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     };
   }
 
-  private normalizeExceptionResponse(
-    resBody: unknown,
-  ): Record<string, unknown> {
+  private normalizeExceptionResponse(resBody: unknown): Record<string, unknown> {
     if (typeof resBody === 'string') return { message: resBody };
     if (!resBody || typeof resBody !== 'object') return {};
     return resBody as Record<string, unknown>;
@@ -124,9 +108,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     };
   }
 
-  private extractDetails(
-    normalized: Record<string, unknown>,
-  ): ErrorDetails[] | undefined {
+  private extractDetails(normalized: Record<string, unknown>): ErrorDetails[] | undefined {
     const details = normalized.details;
     if (Array.isArray(details)) {
       return details as ErrorDetails[];

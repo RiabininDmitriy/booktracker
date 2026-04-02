@@ -1,10 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  ReadingStatus,
-  ReadingStatusEnum,
-} from '../entities/reading-status.entity';
+import { ReadingStatus, ReadingStatusEnum } from '../entities/reading-status.entity';
 
 @Injectable()
 export class ReadingStatusesRepository {
@@ -13,11 +10,7 @@ export class ReadingStatusesRepository {
     private readonly readingStatusesRepository: Repository<ReadingStatus>,
   ) {}
 
-  async setForUserBook(
-    userId: string,
-    bookId: string,
-    status: ReadingStatusEnum,
-  ): Promise<ReadingStatus> {
+  async setForUserBook(userId: string, bookId: string, status: ReadingStatusEnum): Promise<ReadingStatus> {
     await this.readingStatusesRepository.upsert(
       {
         userId,
@@ -36,10 +29,7 @@ export class ReadingStatusesRepository {
     return result!;
   }
 
-  findByUser(
-    userId: string,
-    status?: ReadingStatusEnum,
-  ): Promise<ReadingStatus[]> {
+  findByUser(userId: string, status?: ReadingStatusEnum): Promise<ReadingStatus[]> {
     const qb = this.readingStatusesRepository
       .createQueryBuilder('rs')
       .leftJoinAndSelect('rs.book', 'book')
@@ -49,9 +39,6 @@ export class ReadingStatusesRepository {
       qb.andWhere('rs.status = :status', { status });
     }
 
-    return qb
-      .orderBy('rs.updatedAt', 'DESC')
-      .addOrderBy('book.title', 'ASC')
-      .getMany();
+    return qb.orderBy('rs.updatedAt', 'DESC').addOrderBy('book.title', 'ASC').getMany();
   }
 }

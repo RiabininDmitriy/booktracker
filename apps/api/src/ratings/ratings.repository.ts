@@ -16,11 +16,7 @@ export class RatingsRepository {
     return this.booksRepository.findOne({ where: { id: bookId } });
   }
 
-  async setRatingAndRecalculateAverage(
-    userId: string,
-    bookId: string,
-    value: number,
-  ): Promise<number | null> {
+  async setRatingAndRecalculateAverage(userId: string, bookId: string, value: number): Promise<number | null> {
     return this.dataSource.transaction(async (manager) => {
       await manager.getRepository(Rating).upsert(
         {
@@ -53,10 +49,7 @@ export class RatingsRepository {
     }
 
     return value
-      .filter(
-        (row): row is { avg?: unknown } =>
-          typeof row === 'object' && row !== null && 'avg' in row,
-      )
+      .filter((row): row is { avg?: unknown } => typeof row === 'object' && row !== null && 'avg' in row)
       .map((row) => ({
         avg: typeof row.avg === 'string' || row.avg === null ? row.avg : null,
       }));

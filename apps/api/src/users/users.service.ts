@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
-import { UserNotFoundException } from './exceptions/user-not-found.exception';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UserNotFoundException } from './exceptions/user-not-found.exception';
 
 @Injectable()
 export class UsersService {
@@ -35,10 +35,7 @@ export class UsersService {
     return this.usersRepository.save(user);
   }
 
-  async setRefreshTokenHash(
-    userId: string,
-    refreshTokenHash: string | null,
-  ): Promise<void> {
+  async setRefreshTokenHash(userId: string, refreshTokenHash: string | null): Promise<void> {
     await this.usersRepository.update({ id: userId }, { refreshTokenHash });
   }
 }

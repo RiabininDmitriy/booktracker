@@ -1,12 +1,4 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  Unique,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique, UpdateDateColumn } from 'typeorm';
 import { Book } from './book.entity';
 import { User } from './user.entity';
 
@@ -34,11 +26,19 @@ export class ReadingStatus {
   @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
-  @ManyToOne(() => User, (u) => u.readingStatuses, { onDelete: 'CASCADE' })
+  @ManyToOne(
+    () => User,
+    (u) => u.readingStatuses,
+    { onDelete: 'CASCADE' },
+  )
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Book, (b) => b.readingStatuses, { onDelete: 'CASCADE' })
+  @ManyToOne(
+    () => Book,
+    (b) => b.readingStatuses,
+    { onDelete: 'CASCADE' },
+  )
   @JoinColumn({ name: 'book_id' })
   book: Book;
 }

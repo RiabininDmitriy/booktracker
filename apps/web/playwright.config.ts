@@ -15,7 +15,7 @@ export default defineConfig({
   webServer: {
     command: 'pnpm dev',
     url: baseURL,
-    reuseExistingServer: false,
+    reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     // So Server Components skip API fetch; e2e mocks only apply to browser requests.
     env: {
