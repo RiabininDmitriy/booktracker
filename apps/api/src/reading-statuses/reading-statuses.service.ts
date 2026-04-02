@@ -33,6 +33,12 @@ export class ReadingStatusesService {
       status,
     );
 
+    if (!saved) {
+      throw new NotFoundException(
+        `Reading status could not be saved and retrieved`,
+      );
+    }
+
     return {
       userId: saved.userId,
       bookId: saved.bookId,

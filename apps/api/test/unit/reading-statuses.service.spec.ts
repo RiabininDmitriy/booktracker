@@ -1,5 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Book } from '../../src/entities/book.entity';
 import { ReadingStatusEnum } from '../../src/entities/reading-status.entity';
 import { ReadingStatusesRepository } from '../../src/reading-statuses/reading-statuses.repository';
 import { ReadingStatusesService } from '../../src/reading-statuses/reading-statuses.service';
@@ -9,10 +11,16 @@ describe('ReadingStatusesService', () => {
   let readingStatusesRepository: {
     setForUserBook: jest.Mock;
   };
+  let booksRepository: {
+    exist: jest.Mock;
+  };
 
   beforeEach(async () => {
     readingStatusesRepository = {
       setForUserBook: jest.fn(),
+    };
+    booksRepository = {
+      exist: jest.fn().mockResolvedValue(true),
     };
 
     const testingModule: TestingModule = await Test.createTestingModule({
@@ -21,6 +29,10 @@ describe('ReadingStatusesService', () => {
         {
           provide: ReadingStatusesRepository,
           useValue: readingStatusesRepository,
+        },
+        {
+          provide: getRepositoryToken(Book),
+          useValue: booksRepository,
         },
       ],
     }).compile();
@@ -51,7 +63,7 @@ describe('ReadingStatusesService', () => {
   });
 
   it('throws when book does not exist', async () => {
-    readingStatusesRepository.setForUserBook.mockResolvedValue(null);
+    booksRepository.exist.mockResolvedValue(false);
 
     await expect(
       service.setReadingStatus(
