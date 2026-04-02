@@ -23,10 +23,32 @@ type OpenLibrarySearchResponse = {
   docs?: OpenLibrarySearchDoc[];
 };
 
+type GutendexAuthor = {
+  name?: string;
+};
+
+type GutendexFormats = {
+  'image/jpeg'?: string;
+};
+
+type GutendexBook = {
+  id?: number;
+  title?: string;
+  authors?: GutendexAuthor[];
+  formats?: GutendexFormats;
+};
+
+type GutendexResponse = {
+  results?: GutendexBook[];
+};
+
 @Injectable()
 export class BooksService {
   private readonly logger = new Logger(BooksService.name);
   private static readonly OPEN_LIBRARY_SEARCH_URL = 'https://openlibrary.org/search.json';
+  private static readonly GUTENDEX_SEARCH_URL = 'https://gutendex.com/books/';
+  private static readonly OPEN_LIBRARY_USER_AGENT =
+    process.env.OPEN_LIBRARY_USER_AGENT ?? 'Booktracker/1.0 (+https://github.com/DmytroRiabinin/booktracker)';
 
   constructor(
     private readonly httpService: HttpService,
@@ -98,14 +120,38 @@ export class BooksService {
             q: query,
             limit: 20,
           },
+          headers: {
+            'User-Agent': BooksService.OPEN_LIBRARY_USER_AGENT,
+            Accept: 'application/json',
+          },
         }),
       );
 
       results = (data.docs ?? []).filter((doc) => doc.key && doc.title).map((doc) => this.mapOpenLibraryDoc(doc));
     } catch (error) {
       const axiosError = error as AxiosError<unknown>;
-      this.logger.error('OpenLibrary request failed', axiosError.message);
-      throw new BadGatewayException('Failed to fetch books from OpenLibrary');
+      this.logger.warn(`OpenLibrary request failed, trying Gutendex fallback: ${axiosError.message}`);
+
+      try {
+        const { data } = await firstValueFrom(
+          this.httpService.get<GutendexResponse>(BooksService.GUTENDEX_SEARCH_URL, {
+            params: {
+              search: query,
+            },
+            headers: {
+              Accept: 'application/json',
+            },
+          }),
+        );
+
+        results = (data.results ?? [])
+          .filter((book) => Boolean(book.id && book.title))
+          .map((book) => this.mapGutendexBook(book));
+      } catch (fallbackError) {
+        const fallbackAxiosError = fallbackError as AxiosError<unknown>;
+        this.logger.error('Gutendex fallback request failed', fallbackAxiosError.message);
+        throw new BadGatewayException('Failed to fetch books from external providers');
+      }
     }
 
     try {
@@ -125,6 +171,16 @@ export class BooksService {
       author: doc.author_name?.[0] ?? null,
       coverUrl: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg` : null,
       firstPublishYear: doc.first_publish_year ?? null,
+    };
+  }
+
+  private mapGutendexBook(book: GutendexBook): BookSearchResultDto {
+    return {
+      externalId: `gutendex:${String(book.id)}`,
+      title: book.title ?? 'Unknown title',
+      author: book.authors?.[0]?.name ?? null,
+      coverUrl: book.formats?.['image/jpeg'] ?? null,
+      firstPublishYear: null,
     };
   }
 
