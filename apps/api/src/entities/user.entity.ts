@@ -1,10 +1,4 @@
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Favorite } from './favorite.entity';
 import { Rating } from './rating.entity';
 import { ReadingStatus } from './reading-status.entity';
@@ -48,15 +42,27 @@ export class User {
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date;
 
-  @OneToMany(() => ReadingStatus, (rs: ReadingStatus) => rs.user)
+  @OneToMany(
+    () => ReadingStatus,
+    (rs: ReadingStatus) => rs.user,
+  )
   readingStatuses: ReadingStatus[];
 
-  @OneToMany(() => Review, (r: Review) => r.user)
+  @OneToMany(
+    () => Review,
+    (r: Review) => r.user,
+  )
   reviews: Review[];
 
-  @OneToMany(() => Rating, (r: Rating) => r.user)
+  @OneToMany(
+    () => Rating,
+    (r: Rating) => r.user,
+  )
   ratings: Rating[];
 
-  @OneToMany(() => Favorite, (f: Favorite) => f.user)
+  @OneToMany(
+    () => Favorite,
+    (f: Favorite) => f.user,
+  )
   favorites: Favorite[];
 }

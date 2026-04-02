@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { User } from '../entities/user.entity';
@@ -48,10 +44,7 @@ export class AuthService {
     });
 
     const tokens = this.issueTokens(user);
-    await this.usersService.setRefreshTokenHash(
-      user.id,
-      await bcrypt.hash(tokens.refreshToken, 10),
-    );
+    await this.usersService.setRefreshTokenHash(user.id, await bcrypt.hash(tokens.refreshToken, 10));
 
     return { user, ...tokens };
   }
@@ -63,20 +56,14 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const isPasswordValid = await bcrypt.compare(
-      dto.password,
-      user.passwordHash,
-    );
+    const isPasswordValid = await bcrypt.compare(dto.password, user.passwordHash);
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     const tokens = this.issueTokens(user);
-    await this.usersService.setRefreshTokenHash(
-      user.id,
-      await bcrypt.hash(tokens.refreshToken, 10),
-    );
+    await this.usersService.setRefreshTokenHash(user.id, await bcrypt.hash(tokens.refreshToken, 10));
 
     return { user, ...tokens };
   }
@@ -95,10 +82,7 @@ export class AuthService {
     }
 
     const tokens = this.issueTokens(user);
-    await this.usersService.setRefreshTokenHash(
-      user.id,
-      await bcrypt.hash(tokens.refreshToken, 10),
-    );
+    await this.usersService.setRefreshTokenHash(user.id, await bcrypt.hash(tokens.refreshToken, 10));
 
     return { user, ...tokens };
   }

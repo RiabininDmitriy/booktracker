@@ -1,20 +1,15 @@
-import {
-  BadGatewayException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
+import { BadGatewayException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { AxiosError } from 'axios';
 import { firstValueFrom } from 'rxjs';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Book } from '../entities/book.entity';
+import { BooksRepository } from './books.repository';
 import { BookSearchResultDto } from './dto/book-search-result.dto';
 import { BooksCatalogItemDto } from './dto/books-catalog-item.dto';
 import { BooksCatalogResponseDto } from './dto/books-catalog-response.dto';
 import { ListBooksDto } from './dto/list-books.dto';
-import { BooksRepository } from './books.repository';
 
 type OpenLibrarySearchDoc = {
   key?: string;
@@ -31,8 +26,7 @@ type OpenLibrarySearchResponse = {
 @Injectable()
 export class BooksService {
   private readonly logger = new Logger(BooksService.name);
-  private static readonly OPEN_LIBRARY_SEARCH_URL =
-    'https://openlibrary.org/search.json';
+  private static readonly OPEN_LIBRARY_SEARCH_URL = 'https://openlibrary.org/search.json';
 
   constructor(
     private readonly httpService: HttpService,
@@ -56,8 +50,7 @@ export class BooksService {
     // If the first page has too few local matches for a text query, hydrate cache from
     // OpenLibrary and retry once so search isn't limited to pre-seeded local data.
     const normalizedQuery = searchQuery?.trim();
-    const shouldHydrateFromOpenLibrary =
-      Boolean(normalizedQuery) && page === 1 && total < limit;
+    const shouldHydrateFromOpenLibrary = Boolean(normalizedQuery) && page === 1 && total < limit;
 
     if (shouldHydrateFromOpenLibrary && normalizedQuery) {
       try {
@@ -72,9 +65,7 @@ export class BooksService {
         });
       } catch (error) {
         const openLibraryError = error as Error;
-        this.logger.warn(
-          `Catalog fallback search failed: ${openLibraryError.message}`,
-        );
+        this.logger.warn(`Catalog fallback search failed: ${openLibraryError.message}`);
       }
     }
 
@@ -102,20 +93,15 @@ export class BooksService {
 
     try {
       const { data } = await firstValueFrom(
-        this.httpService.get<OpenLibrarySearchResponse>(
-          BooksService.OPEN_LIBRARY_SEARCH_URL,
-          {
-            params: {
-              q: query,
-              limit: 20,
-            },
+        this.httpService.get<OpenLibrarySearchResponse>(BooksService.OPEN_LIBRARY_SEARCH_URL, {
+          params: {
+            q: query,
+            limit: 20,
           },
-        ),
+        }),
       );
 
-      results = (data.docs ?? [])
-        .filter((doc) => doc.key && doc.title)
-        .map((doc) => this.mapOpenLibraryDoc(doc));
+      results = (data.docs ?? []).filter((doc) => doc.key && doc.title).map((doc) => this.mapOpenLibraryDoc(doc));
     } catch (error) {
       const axiosError = error as AxiosError<unknown>;
       this.logger.error('OpenLibrary request failed', axiosError.message);
@@ -126,9 +112,7 @@ export class BooksService {
       await this.cacheBooks(results);
     } catch (error) {
       const persistError = error as Error;
-      this.logger.warn(
-        `Failed to persist OpenLibrary books to local database: ${persistError.message}`,
-      );
+      this.logger.warn(`Failed to persist OpenLibrary books to local database: ${persistError.message}`);
     }
 
     return results;
@@ -139,9 +123,7 @@ export class BooksService {
       externalId: this.normalizeExternalId(doc.key),
       title: doc.title ?? 'Unknown title',
       author: doc.author_name?.[0] ?? null,
-      coverUrl: doc.cover_i
-        ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg`
-        : null,
+      coverUrl: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-L.jpg` : null,
       firstPublishYear: doc.first_publish_year ?? null,
     };
   }

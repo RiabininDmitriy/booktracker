@@ -1,12 +1,13 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.2/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
   "linter": {
     "rules": {
-      "correctness": {
-        "noUnknownAtRules": "off"
-      },
+      "correctness": {},
       "style": {
         "useImportType": "off"
+      },
+      "suspicious": {
+        "noUnknownAtRules": "off"
       }
     }
   },

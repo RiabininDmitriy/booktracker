@@ -13,8 +13,8 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ReviewResponseDto } from './dto/review-response.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { ReviewResponseDto } from './dto/review-response.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewsService } from './reviews.service';
 
@@ -24,9 +24,7 @@ export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   @Get('book/:bookId')
-  listByBook(
-    @Param('bookId', new ParseUUIDPipe()) bookId: string,
-  ): Promise<ReviewResponseDto[]> {
+  listByBook(@Param('bookId', new ParseUUIDPipe()) bookId: string): Promise<ReviewResponseDto[]> {
     return this.reviewsService.listByBook(bookId);
   }
 

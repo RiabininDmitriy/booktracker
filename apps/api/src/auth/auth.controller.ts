@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  Res,
-  UnauthorizedException,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, Res, UnauthorizedException, UseGuards } from '@nestjs/common';
 import type { CookieOptions, Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import type { RequestUser } from './current-user.decorator';
@@ -60,13 +51,8 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<AuthResponseDto> {
-    const refreshToken = (req.cookies as Record<string, string> | undefined)?.[
-      REFRESH_COOKIE_NAME
-    ];
+  async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<AuthResponseDto> {
+    const refreshToken = (req.cookies as Record<string, string> | undefined)?.[REFRESH_COOKIE_NAME];
     if (!refreshToken) {
       throw new UnauthorizedException('Missing refresh token');
     }
@@ -78,35 +64,18 @@ export class AuthController {
   }
 
   @Post('logout')
-  async logout(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<void> {
-    const refreshToken = (req.cookies as Record<string, string> | undefined)?.[
-      REFRESH_COOKIE_NAME
-    ];
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
+    const refreshToken = (req.cookies as Record<string, string> | undefined)?.[REFRESH_COOKIE_NAME];
     await this.authService.logout(refreshToken);
     res.clearCookie(REFRESH_COOKIE_NAME, this.refreshCookieOptions(req));
     res.clearCookie(ACCESS_COOKIE_NAME, this.accessCookieOptions(req));
   }
 
-  private setRefreshCookie(
-    res: Response,
-    req: Request,
-    refreshToken: string,
-  ): void {
-    res.cookie(
-      REFRESH_COOKIE_NAME,
-      refreshToken,
-      this.refreshCookieOptions(req),
-    );
+  private setRefreshCookie(res: Response, req: Request, refreshToken: string): void {
+    res.cookie(REFRESH_COOKIE_NAME, refreshToken, this.refreshCookieOptions(req));
   }
 
-  private setAccessCookie(
-    res: Response,
-    req: Request,
-    accessToken: string,
-  ): void {
+  private setAccessCookie(res: Response, req: Request, accessToken: string): void {
     res.cookie(ACCESS_COOKIE_NAME, accessToken, this.accessCookieOptions(req));
   }
 
@@ -134,10 +103,7 @@ export class AuthController {
     };
   }
 
-  private toAuthResponse(
-    accessToken: string,
-    user: RequestUser,
-  ): AuthResponseDto {
+  private toAuthResponse(accessToken: string, user: RequestUser): AuthResponseDto {
     return {
       accessToken,
       user: {

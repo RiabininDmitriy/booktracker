@@ -1,5 +1,4 @@
-import { ReadingStatusEnum } from '../../entities/reading-status.entity';
-import { ReadingStatus } from '../../entities/reading-status.entity';
+import { ReadingStatus, ReadingStatusEnum } from '../../entities/reading-status.entity';
 import { ReadingStatusBookDto } from './reading-status-book.dto';
 
 export class ReadingStatusListItemDto {

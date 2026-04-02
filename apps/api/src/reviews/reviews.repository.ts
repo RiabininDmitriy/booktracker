@@ -48,8 +48,6 @@ export class ReviewsRepository {
   }
 
   deleteById(reviewId: string): Promise<void> {
-    return this.reviewsRepository
-      .delete({ id: reviewId })
-      .then(() => undefined);
+    return this.reviewsRepository.delete({ id: reviewId }).then(() => undefined);
   }
 }

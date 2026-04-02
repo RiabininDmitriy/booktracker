@@ -50,6 +50,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Biome check
+        run: pnpm lint:biome
+
       - name: Format check
         run: pnpm format:check
 
@@ -80,6 +83,14 @@ jobs:
 
       - name: Web unit tests
         run: pnpm --filter web test:unit
+
+      - name: Start API for Web e2e
+        env:
+          NODE_ENV: development
+        run: pnpm --filter api start:dev &
+
+      - name: Wait for API
+        run: pnpm exec wait-on tcp:3001
 
       - name: Web e2e tests
         env:
