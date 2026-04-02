@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from '../../src/auth/auth.service';
-import { UsersService } from '../../src/users/users.service';
 import { UserRole } from '../../src/entities/user.entity';
+import { UsersService } from '../../src/users/users.service';
 
 jest.mock('bcrypt');
 
@@ -80,18 +80,13 @@ describe('AuthService', () => {
         passwordHash: 'hashed-pw-or-token',
         name: 'New',
       });
-      expect(usersService.setRefreshTokenHash).toHaveBeenCalledWith(
-        'user-1',
-        'hashed-pw-or-token',
-      );
+      expect(usersService.setRefreshTokenHash).toHaveBeenCalledWith('user-1', 'hashed-pw-or-token');
     });
 
     it('throws ConflictException if email is taken', async () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
 
-      await expect(
-        service.register({ email: 'test@example.com', password: 'pw' }),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.register({ email: 'test@example.com', password: 'pw' })).rejects.toThrow(ConflictException);
     });
   });
 
@@ -116,18 +111,16 @@ describe('AuthService', () => {
     it('throws UnauthorizedException if user not found', async () => {
       usersService.findByEmail.mockResolvedValue(null);
 
-      await expect(
-        service.login({ email: 'none@example.com', password: 'pw' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login({ email: 'none@example.com', password: 'pw' })).rejects.toThrow(UnauthorizedException);
     });
 
     it('throws UnauthorizedException if password does not match', async () => {
       usersService.findByEmail.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(
-        service.login({ email: 'test@example.com', password: 'wrong' }),
-      ).rejects.toThrow(UnauthorizedException);
+      await expect(service.login({ email: 'test@example.com', password: 'wrong' })).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -144,10 +137,7 @@ describe('AuthService', () => {
 
       expect(result.accessToken).toBe('new-access');
       expect(result.refreshToken).toBe('new-refresh');
-      expect(usersService.setRefreshTokenHash).toHaveBeenCalledWith(
-        'user-1',
-        'new-hashed-refresh',
-      );
+      expect(usersService.setRefreshTokenHash).toHaveBeenCalledWith('user-1', 'new-hashed-refresh');
     });
 
     it('throws UnauthorizedException if token verification fails', async () => {
@@ -155,9 +145,7 @@ describe('AuthService', () => {
         throw new Error('invalid');
       });
 
-      await expect(service.refresh('invalid-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.refresh('invalid-token')).rejects.toThrow(UnauthorizedException);
     });
 
     it('throws UnauthorizedException if user does not have refresh token hash', async () => {
@@ -167,9 +155,7 @@ describe('AuthService', () => {
         refreshTokenHash: null,
       });
 
-      await expect(service.refresh('token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.refresh('token')).rejects.toThrow(UnauthorizedException);
     });
 
     it('throws UnauthorizedException if refresh token does not match hash', async () => {
@@ -177,9 +163,7 @@ describe('AuthService', () => {
       usersService.findById.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
-      await expect(service.refresh('wrong-token')).rejects.toThrow(
-        UnauthorizedException,
-      );
+      await expect(service.refresh('wrong-token')).rejects.toThrow(UnauthorizedException);
     });
   });
 
@@ -187,10 +171,7 @@ describe('AuthService', () => {
     it('clears refresh token hash on valid refresh token', async () => {
       jwtService.verify.mockReturnValue({ sub: 'user-1' });
       await service.logout('valid-token');
-      expect(usersService.setRefreshTokenHash).toHaveBeenCalledWith(
-        'user-1',
-        null,
-      );
+      expect(usersService.setRefreshTokenHash).toHaveBeenCalledWith('user-1', null);
     });
 
     it('does nothing if refresh token is undefined', async () => {

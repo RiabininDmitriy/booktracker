@@ -1,14 +1,19 @@
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { configure as serverlessExpress } from '@vendia/serverless-express';
+import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2, Callback, Context, Handler } from 'aws-lambda';
 import { ValidationError } from 'class-validator';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+type LambdaHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>;
+
+let server: LambdaHandler;
+
+function setupApp(app: INestApplication) {
   const frontendOrigin = process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000';
 
   app.enableCors({
@@ -45,8 +50,40 @@ async function bootstrap() {
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, swaggerDocument);
 
-  const configService = app.get(ConfigService);
-  const port = configService.get<number>('PORT', 3001);
-  await app.listen(port);
+  return app;
 }
-void bootstrap();
+
+export const handler: LambdaHandler = (
+  event: APIGatewayProxyEventV2,
+  context: Context,
+  callback: Callback<APIGatewayProxyResultV2>,
+) => {
+  void (async () => {
+    try {
+      if (!server) {
+        const app = await NestFactory.create(AppModule);
+        setupApp(app);
+        await app.init();
+        const expressApp: unknown = app.getHttpAdapter().getInstance();
+        server = serverlessExpress({
+          app: expressApp as Parameters<typeof serverlessExpress>[0]['app'],
+        }) as LambdaHandler;
+      }
+
+      await server(event, context, callback);
+    } catch (error) {
+      callback(error as Error);
+    }
+  })();
+};
+
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  async function bootstrap() {
+    const app = await NestFactory.create(AppModule);
+    setupApp(app);
+    const configService = app.get(ConfigService);
+    const port = configService.get<number>('PORT', 3001);
+    await app.listen(port);
+  }
+  void bootstrap();
+}

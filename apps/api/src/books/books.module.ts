@@ -6,11 +6,17 @@ import { BooksController } from './books.controller';
 import { BooksRepository } from './books.repository';
 import { BooksService } from './books.service';
 
+const defaultOpenLibraryTimeoutMs = 5000;
+const openLibraryTimeoutMs = Number(process.env.OPEN_LIBRARY_TIMEOUT_MS ?? defaultOpenLibraryTimeoutMs);
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([Book]),
     HttpModule.register({
-      timeout: 8000,
+      timeout:
+        Number.isFinite(openLibraryTimeoutMs) && openLibraryTimeoutMs > 0
+          ? openLibraryTimeoutMs
+          : defaultOpenLibraryTimeoutMs,
       maxRedirects: 5,
     }),
   ],
