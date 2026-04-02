@@ -5,6 +5,8 @@ import { ValidationError } from 'class-validator';
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { App } from 'supertest/types';
+import { HttpService } from '@nestjs/axios';
+import { of } from 'rxjs';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
 
 export async function createTestApp(): Promise<INestApplication<App>> {
@@ -23,7 +25,12 @@ export async function createTestApp(): Promise<INestApplication<App>> {
 
   const moduleRef = await Test.createTestingModule({
     imports: [appModule.AppModule],
-  }).compile();
+  })
+    .overrideProvider(HttpService)
+    .useValue({
+      get: jest.fn().mockImplementation(() => of({ data: { docs: [] } })),
+    })
+    .compile();
 
   const app = moduleRef.createNestApplication<INestApplication<App>>();
 
