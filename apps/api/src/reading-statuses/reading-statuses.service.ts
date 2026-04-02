@@ -15,11 +15,7 @@ export class ReadingStatusesService {
     private readonly booksRepository: Repository<Book>,
   ) {}
 
-  async setReadingStatus(
-    userId: string,
-    bookId: string,
-    status: ReadingStatusEnum,
-  ): Promise<ReadingStatusResponseDto> {
+  async setReadingStatus(userId: string, bookId: string, status: ReadingStatusEnum): Promise<ReadingStatusResponseDto> {
     const bookExists = await this.booksRepository.exist({
       where: { id: bookId },
     });
@@ -27,16 +23,10 @@ export class ReadingStatusesService {
       throw new NotFoundException(`Book with id "${bookId}" not found`);
     }
 
-    const saved = await this.readingStatusesRepository.setForUserBook(
-      userId,
-      bookId,
-      status,
-    );
+    const saved = await this.readingStatusesRepository.setForUserBook(userId, bookId, status);
 
     if (!saved) {
-      throw new NotFoundException(
-        `Reading status could not be saved and retrieved`,
-      );
+      throw new NotFoundException(`Reading status could not be saved and retrieved`);
     }
 
     return {
@@ -47,14 +37,8 @@ export class ReadingStatusesService {
     };
   }
 
-  async listForUser(
-    userId: string,
-    status?: ReadingStatusEnum,
-  ): Promise<ReadingStatusListItemDto[]> {
-    const readingStatuses = await this.readingStatusesRepository.findByUser(
-      userId,
-      status,
-    );
+  async listForUser(userId: string, status?: ReadingStatusEnum): Promise<ReadingStatusListItemDto[]> {
+    const readingStatuses = await this.readingStatusesRepository.findByUser(userId, status);
 
     return readingStatuses.map((item) => new ReadingStatusListItemDto(item));
   }

@@ -2,8 +2,8 @@ import { Controller, Get, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { BooksService } from './books.service';
 import { BookSearchResultDto } from './dto/book-search-result.dto';
-import { BooksCatalogResponseDto } from './dto/books-catalog-response.dto';
 import { BooksCatalogItemDto } from './dto/books-catalog-item.dto';
+import { BooksCatalogResponseDto } from './dto/books-catalog-response.dto';
 import { ListBooksDto } from './dto/list-books.dto';
 import { SearchBooksDto } from './dto/search-books.dto';
 
@@ -23,9 +23,7 @@ export class BooksController {
   }
 
   @Get(':id')
-  findById(
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<BooksCatalogItemDto> {
+  findById(@Param('id', new ParseUUIDPipe()) id: string): Promise<BooksCatalogItemDto> {
     return this.booksService.findById(id);
   }
 }

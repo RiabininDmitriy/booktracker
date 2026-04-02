@@ -1,12 +1,5 @@
 import { DataSource } from 'typeorm';
-import {
-  Book,
-  Favorite,
-  Rating,
-  ReadingStatus,
-  Review,
-  User,
-} from '../entities';
+import { Book, Favorite, Rating, ReadingStatus, Review, User } from '../entities';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',

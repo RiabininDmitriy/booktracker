@@ -4,8 +4,8 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
-  Query,
   Put,
+  Query,
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
@@ -23,9 +23,7 @@ import { ReadingStatusesService } from './reading-statuses.service';
 @Controller('reading-statuses')
 @UseGuards(JwtAuthGuard)
 export class ReadingStatusesController {
-  constructor(
-    private readonly readingStatusesService: ReadingStatusesService,
-  ) {}
+  constructor(private readonly readingStatusesService: ReadingStatusesService) {}
 
   @Get('me')
   listMyReadingStatuses(
@@ -49,10 +47,6 @@ export class ReadingStatusesController {
       throw new UnauthorizedException('Missing user context');
     }
 
-    return this.readingStatusesService.setReadingStatus(
-      user.id,
-      bookId,
-      dto.status,
-    );
+    return this.readingStatusesService.setReadingStatus(user.id, bookId, dto.status);
   }
 }
