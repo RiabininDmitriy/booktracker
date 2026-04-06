@@ -7,10 +7,10 @@ export class Favorite {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ type: 'uuid', name: 'user_id' })
   userId: string;
 
-  @Column({ name: 'book_id' })
+  @Column({ type: 'uuid', name: 'book_id' })
   bookId: string;
 
   @CreateDateColumn({ name: 'created_at' })

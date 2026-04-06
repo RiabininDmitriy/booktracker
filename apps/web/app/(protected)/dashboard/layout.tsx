@@ -1,8 +1,5 @@
 import type { ReactNode } from 'react';
 
-import { requireServerSession } from '@/lib/auth/require-server-session';
-
-export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  await requireServerSession('/dashboard');
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return children;
 }

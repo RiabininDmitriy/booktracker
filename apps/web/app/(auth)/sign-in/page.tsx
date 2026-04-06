@@ -5,6 +5,7 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import { SignInCard } from '@/components/auth/sign-in-card';
+import { persistAppAccessTokenCookie } from '@/lib/auth/app-session-cookie';
 import { getApiErrorMessage } from '@/lib/auth/api-error';
 import { useLoginMutation } from '@/lib/store/api/auth-api';
 
@@ -28,6 +29,7 @@ function SignInPageContent() {
         setError('Unexpected auth response. Please try again.');
         return;
       }
+      persistAppAccessTokenCookie(response.accessToken);
 
       const nextPath = searchParams.get('next');
       const destination = nextPath?.startsWith('/') ? nextPath : '/dashboard';

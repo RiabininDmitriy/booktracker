@@ -16,22 +16,24 @@ export default $config({
     // The NestJS backend serverless function
     const api = new sst.aws.Function("Api", {
       handler: "apps/api/dist/main.handler",
+      runtime: "nodejs20.x",
+      url: {
+        cors: false,
+      },
       environment: {
         DATABASE_URL: databaseUrl.value,
         JWT_SECRET: jwtSecret.value,
         NODE_ENV: "production",
       },
-      // Since Nest.js relies on decorators and precise metadata during DI and TypeORM resolving,
-      // it is safer to rely on the pre-built dist output instead of SST's esbuild bundler 
-      // tearing through TS files natively, as decorators can occasionally get mangled.
-      // Make sure `pnpm --filter api build` is run before deploying.
-      copyFiles: [
-        { from: "apps/api/dist", to: "apps/api/dist" },
-        { from: "apps/api/node_modules", to: "apps/api/node_modules" },
-      ],
-      // We instruct SST that we supply our own modules/dist for this function
+      copyFiles: [],
       nodejs: {
-        install: [], 
+        format: "cjs",
+        install: [
+          "@nestjs/mapped-types",
+          "@nestjs/microservices",
+          "@nestjs/websockets",
+          "class-transformer"
+        ]
       }
     });
 

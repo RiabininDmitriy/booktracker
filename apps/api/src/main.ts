@@ -1,23 +1,28 @@
+import 'reflect-metadata';
 import { BadRequestException, INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { configure as serverlessExpress } from '@vendia/serverless-express';
-import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2, Callback, Context, Handler } from 'aws-lambda';
+import type { APIGatewayProxyEventV2, APIGatewayProxyResultV2, Context } from 'aws-lambda';
 import { ValidationError } from 'class-validator';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
-type LambdaHandler = Handler<APIGatewayProxyEventV2, APIGatewayProxyResultV2>;
+type LambdaHandler = (event: APIGatewayProxyEventV2, context: Context) => Promise<APIGatewayProxyResultV2>;
 
-let server: LambdaHandler;
+type ServerlessExpressHandler = (event: APIGatewayProxyEventV2, context: Context) => Promise<APIGatewayProxyResultV2>;
+
+let server: ServerlessExpressHandler;
 
 function setupApp(app: INestApplication) {
-  const frontendOrigin = process.env.FRONTEND_ORIGIN ?? 'http://localhost:3000';
+  const frontendOrigin = process.env.FRONTEND_ORIGIN?.trim();
 
   app.enableCors({
-    origin: frontendOrigin,
+    // In Lambda we often don't know the final frontend URL at bootstrap time.
+    // Using `true` reflects the request origin and keeps credentialed CORS working.
+    origin: frontendOrigin || true,
     credentials: true,
   });
   app.use(cookieParser());
@@ -53,28 +58,18 @@ function setupApp(app: INestApplication) {
   return app;
 }
 
-export const handler: LambdaHandler = (
-  event: APIGatewayProxyEventV2,
-  context: Context,
-  callback: Callback<APIGatewayProxyResultV2>,
-) => {
-  void (async () => {
-    try {
-      if (!server) {
-        const app = await NestFactory.create(AppModule);
-        setupApp(app);
-        await app.init();
-        const expressApp: unknown = app.getHttpAdapter().getInstance();
-        server = serverlessExpress({
-          app: expressApp as Parameters<typeof serverlessExpress>[0]['app'],
-        }) as LambdaHandler;
-      }
+export const handler: LambdaHandler = async (event: APIGatewayProxyEventV2, context: Context) => {
+  if (!server) {
+    const app = await NestFactory.create(AppModule);
+    setupApp(app);
+    await app.init();
+    const expressApp: unknown = app.getHttpAdapter().getInstance();
+    server = serverlessExpress({
+      app: expressApp as Parameters<typeof serverlessExpress>[0]['app'],
+    }) as unknown as ServerlessExpressHandler;
+  }
 
-      await server(event, context, callback);
-    } catch (error) {
-      callback(error as Error);
-    }
-  })();
+  return server(event, context);
 };
 
 if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {

@@ -9,10 +9,10 @@ export class Book {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'external_id', unique: true })
+  @Column({ type: 'varchar', length: 255, name: 'external_id', unique: true })
   externalId: string;
 
-  @Column()
+  @Column({ type: 'varchar', length: 500 })
   title: string;
 
   @Column({ type: 'varchar', nullable: true })
@@ -37,7 +37,7 @@ export class Book {
   })
   avgRating: number | null;
 
-  @Column({ name: 'review_count', default: 0 })
+  @Column({ type: 'integer', name: 'review_count', default: 0 })
   reviewCount: number;
 
   @CreateDateColumn({ name: 'created_at' })

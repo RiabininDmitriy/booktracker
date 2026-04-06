@@ -14,10 +14,10 @@ export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 255, unique: true })
   email: string;
 
-  @Column({ name: 'password_hash' })
+  @Column({ type: 'varchar', length: 255, name: 'password_hash' })
   passwordHash: string;
 
   @Column({

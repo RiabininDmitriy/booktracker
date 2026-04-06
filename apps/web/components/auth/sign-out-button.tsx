@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
+import { clearAppAccessTokenCookie } from '@/lib/auth/app-session-cookie';
 import { baseApi } from '@/lib/store/api/base-api';
 import { useLogoutMutation } from '@/lib/store/api/auth-api';
 import { useAppDispatch } from '@/lib/store/hooks';
@@ -16,6 +17,7 @@ export function SignOutButton() {
     try {
       dispatch(baseApi.util.resetApiState());
       await logout().unwrap();
+      clearAppAccessTokenCookie();
       router.replace('/sign-in');
       router.refresh();
     } catch {

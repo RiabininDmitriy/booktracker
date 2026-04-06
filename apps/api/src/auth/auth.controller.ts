@@ -85,7 +85,7 @@ export class AuthController {
     return {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: REFRESH_COOKIE_MAX_AGE_MS,
       path: '/auth',
     };
@@ -97,7 +97,7 @@ export class AuthController {
     return {
       httpOnly: true,
       secure: isProduction,
-      sameSite: 'lax',
+      sameSite: isProduction ? 'none' : 'lax',
       maxAge: ACCESS_COOKIE_MAX_AGE_MS,
       path: '/',
     };

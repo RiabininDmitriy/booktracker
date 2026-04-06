@@ -36,3 +36,12 @@ TASKS.md
 
 # Cursor local files
 .cursor/
+
+# SST / OpenNext generated artifacts
+.sst/
+apps/web/.open-next/
+.open-next/
+sst-env.d.ts
+apps/api/sst-env.d.ts
+apps/web/sst-env.d.ts
+apps/api/resource.enc
