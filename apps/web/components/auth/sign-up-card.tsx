@@ -45,7 +45,7 @@ export function SignUpCard({
           <AuthField
             idPrefix="signup"
             label="Full name"
-            placeholder="Dmytro Riabinin"
+            placeholder="Full Name"
             name="name"
             autoComplete="name"
             value={name}
