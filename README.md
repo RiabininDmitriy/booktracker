@@ -136,3 +136,9 @@ Create/update `apps/api/.env` with both values (see step 3).
 - In this repo migrations are configured to run via:
   - `node -r dotenv/config -r ts-node/register -r tsconfig-paths/register`
 - This ensures `apps/api/.env` is loaded and TypeORM reads `src/database/data-source.ts` correctly.
+
+## 8) Neon Postgres (cloud DB)
+
+If you want to use Neon instead of local Docker Postgres, see:
+
+- `NEON_POSTGRES_README.md`
