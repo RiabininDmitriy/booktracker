@@ -16,9 +16,10 @@ const readingStatusOptions: Array<{ value: ReadingStatus; label: string }> = [
 type BookDetailsHeroProps = {
   book: CatalogBook;
   effectiveRating: number | null;
+  selectedRating: number | null;
   reviewsCountLabel: string;
   isFavorite: boolean;
-  localStatus: ReadingStatus | null;
+  effectiveStatus: ReadingStatus | null;
   feedback: string | null;
   isSavingStatus: boolean;
   isSavingRating: boolean;
@@ -31,9 +32,10 @@ type BookDetailsHeroProps = {
 export function BookDetailsHero({
   book,
   effectiveRating,
+  selectedRating,
   reviewsCountLabel,
   isFavorite,
-  localStatus,
+  effectiveStatus,
   feedback,
   isSavingStatus,
   isSavingRating,
@@ -69,7 +71,7 @@ export function BookDetailsHero({
                 My reading status
               </p>
               <Select
-                value={localStatus ?? ''}
+                value={effectiveStatus ?? ''}
                 onChange={(event) => {
                   const selectedStatus = event.target.value;
                   if (!selectedStatus) return;
@@ -77,7 +79,7 @@ export function BookDetailsHero({
                 }}
                 disabled={isSavingStatus}
               >
-                <option value="">Select status...</option>
+                <option value="">Choose status</option>
                 {readingStatusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -96,7 +98,7 @@ export function BookDetailsHero({
                     key={value}
                     size="sm"
                     className="h-11 w-11 shrink-0 px-0"
-                    variant="secondary"
+                    variant={selectedRating === value ? 'primary' : 'secondary'}
                     onClick={() => onRate(value)}
                     disabled={isSavingRating}
                   >

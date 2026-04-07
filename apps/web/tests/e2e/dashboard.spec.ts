@@ -46,12 +46,42 @@ const dashboardItems = [
 ] as const;
 
 test.describe('dashboard page', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.route('**/auth/me', async (route) => {
+      const cookieHeader = route.request().headers().cookie ?? '';
+      const isAuthenticated = cookieHeader.includes('access_token=');
+
+      if (!isAuthenticated) {
+        await route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({}),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'user-1',
+          email: 'qa@example.com',
+          name: 'QA',
+          pendingEmail: null,
+          emailVerifiedAt: '2026-01-01T00:00:00.000Z',
+          role: 'user',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        }),
+      });
+    });
+  });
+
   test('renders reading lists by status', async ({ context, page }) => {
     await context.addCookies([
       { name: 'access_token', value: 'token', url: 'http://localhost:3000' },
     ]);
 
-    await page.route('**://localhost:3001/reading-statuses/me', async (route) => {
+    await page.route('**/reading-statuses/me', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -76,7 +106,7 @@ test.describe('dashboard page', () => {
       { name: 'access_token', value: 'token', url: 'http://localhost:3000' },
     ]);
 
-    await page.route('**://localhost:3001/reading-statuses/me', async (route) => {
+    await page.route('**/reading-statuses/me', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -84,7 +114,7 @@ test.describe('dashboard page', () => {
       });
     });
 
-    await page.route('**://localhost:3001/books/book-planned', async (route) => {
+    await page.route('**/books/book-planned', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -102,7 +132,7 @@ test.describe('dashboard page', () => {
       });
     });
 
-    await page.route('**://localhost:3001/reviews/book/book-planned', async (route) => {
+    await page.route('**/reviews/book/book-planned', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -114,6 +144,6 @@ test.describe('dashboard page', () => {
     await page.getByRole('link', { name: /Planned Book/i }).click();
 
     await expect(page).toHaveURL('/books/book-planned');
-    await expect(page.getByText('Book details')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Book details' })).toBeVisible();
   });
 });

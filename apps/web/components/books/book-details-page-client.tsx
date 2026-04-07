@@ -1,7 +1,7 @@
 'use client';
 
 import type { FormEvent } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 import { BookDetailsHero } from '@/components/books/book-details-hero';
@@ -19,6 +19,7 @@ import {
   useToggleFavoriteMutation,
   useUpdateReviewMutation,
 } from '@/lib/store/api/book-detail-api';
+import { useGetMyReadingStatusesQuery } from '@/lib/store/api/dashboard-api';
 
 const readingStatusOrder: Record<ReadingStatus, number> = {
   planned: 0,
@@ -46,6 +47,7 @@ export function BookDetailsPageClient({ bookId }: BookDetailsPageClientProps) {
     isError: isBookError,
   } = useGetBookByIdQuery(bookId);
   const { data: reviews, isLoading: isReviewsLoading } = useGetReviewsByBookQuery(bookId);
+  const { data: readingStatuses } = useGetMyReadingStatusesQuery();
 
   const [setRating, { isLoading: isSavingRating }] = useSetRatingMutation();
   const [setReadingStatus, { isLoading: isSavingStatus }] = useSetReadingStatusMutation();
@@ -54,8 +56,53 @@ export function BookDetailsPageClient({ bookId }: BookDetailsPageClientProps) {
   const [updateReview, { isLoading: isUpdatingReview }] = useUpdateReviewMutation();
   const [deleteReview, { isLoading: isDeletingReview }] = useDeleteReviewMutation();
 
-  const effectiveRating = localRating ?? book?.avgRating ?? null;
-  const effectiveStatus = localStatus ?? 'planned';
+  const persistedStatus = useMemo(
+    () => readingStatuses?.find((item) => item.bookId === bookId)?.status ?? null,
+    [bookId, readingStatuses]
+  );
+
+  const ratingStorageKey = `book-rating:${bookId}`;
+  const [storedRating, setStoredRating] = useState<number | null>(null);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const rawRating = window.localStorage.getItem(ratingStorageKey);
+      if (!rawRating) {
+        setStoredRating(null);
+        return;
+      }
+
+      const parsedRating = Number(rawRating);
+      if (Number.isFinite(parsedRating) && parsedRating >= 1 && parsedRating <= 5) {
+        setStoredRating(parsedRating);
+        return;
+      }
+
+      window.localStorage.removeItem(ratingStorageKey);
+      setStoredRating(null);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [ratingStorageKey]);
+
+  const selectedRating = localRating ?? storedRating;
+  const effectiveRating = selectedRating ?? book?.avgRating ?? null;
+  const highlightedRating = useMemo(() => {
+    if (selectedRating && selectedRating >= 1 && selectedRating <= 5) {
+      return selectedRating;
+    }
+
+    if (book?.avgRating == null) {
+      return null;
+    }
+
+    const roundedRating = Math.round(book.avgRating);
+    const isIntegerRating = Math.abs(book.avgRating - roundedRating) < Number.EPSILON;
+    return isIntegerRating && roundedRating >= 1 && roundedRating <= 5 ? roundedRating : null;
+  }, [book?.avgRating, selectedRating]);
+  const effectiveStatus = localStatus ?? persistedStatus;
   const hasMyReview = Boolean(
     currentUserId && reviews?.some((review) => review.userId === currentUserId)
   );
@@ -67,8 +114,11 @@ export function BookDetailsPageClient({ bookId }: BookDetailsPageClientProps) {
 
   const handleRating = async (value: number) => {
     try {
-      const response = await setRating({ bookId, value }).unwrap();
-      setLocalRating(response.avgRating ?? value);
+      await setRating({ bookId, value }).unwrap();
+      setLocalRating(value);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(ratingStorageKey, String(value));
+      }
       setFeedback('Rating saved.');
     } catch {
       setFeedback('Unable to save rating.');
@@ -76,13 +126,13 @@ export function BookDetailsPageClient({ bookId }: BookDetailsPageClientProps) {
   };
 
   const handleStatus = async (status: ReadingStatus) => {
-    if (readingStatusOrder[status] < readingStatusOrder[effectiveStatus]) {
+    if (effectiveStatus && readingStatusOrder[status] < readingStatusOrder[effectiveStatus]) {
       setFeedback('Status can only move forward: planned -> reading -> completed.');
       return;
     }
 
     const hasLocalStatus = localStatus !== null;
-    if (hasLocalStatus && status === effectiveStatus) {
+    if (effectiveStatus && hasLocalStatus && status === effectiveStatus) {
       return;
     }
 
@@ -161,9 +211,10 @@ export function BookDetailsPageClient({ bookId }: BookDetailsPageClientProps) {
           <BookDetailsHero
             book={book}
             effectiveRating={effectiveRating}
+            selectedRating={highlightedRating}
             reviewsCountLabel={reviewsCountLabel}
             isFavorite={isFavorite}
-            localStatus={localStatus}
+            effectiveStatus={effectiveStatus}
             feedback={feedback}
             isSavingStatus={isSavingStatus}
             isSavingRating={isSavingRating}

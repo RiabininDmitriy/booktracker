@@ -4,6 +4,8 @@ export class AuthUserDto {
   id: string;
   email: string;
   name: string | null;
+  pendingEmail: string | null;
+  emailVerifiedAt: Date | null;
   role: UserRole;
   createdAt: Date;
 }
