@@ -11,7 +11,7 @@ interface JwtPayload {
   role: string;
 }
 
-type RequestUser = Pick<User, 'id' | 'email' | 'name' | 'role' | 'createdAt'>;
+type RequestUser = Pick<User, 'id' | 'email' | 'name' | 'role' | 'createdAt' | 'pendingEmail' | 'emailVerifiedAt'>;
 
 function extractAccessTokenFromCookie(req: Request | undefined): string | null {
   const cookies = req?.cookies as Record<string, unknown> | undefined;
@@ -45,6 +45,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         name: user.name,
         role: user.role,
         createdAt: user.createdAt,
+        pendingEmail: user.pendingEmail,
+        emailVerifiedAt: user.emailVerifiedAt,
       };
     } catch {
       throw new UnauthorizedException('Invalid token');

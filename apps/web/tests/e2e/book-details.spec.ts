@@ -31,7 +31,7 @@ test.describe('book details page', () => {
     ]);
 
     await page.route('**/auth/me', async (route) => {
-      if (!route.request().url().includes(':3001/')) {
+      if (route.request().resourceType() === 'document') {
         await route.fallback();
         return;
       }
@@ -42,14 +42,28 @@ test.describe('book details page', () => {
           id: 'user-1',
           email: 'admin@gmail.com',
           name: 'Admin',
-          role: 'ADMIN',
+          pendingEmail: null,
+          emailVerifiedAt: '2026-01-01T00:00:00.000Z',
+          role: 'admin',
           createdAt: '2026-01-01T00:00:00.000Z',
         }),
       });
     });
 
+    await page.route('**/reading-statuses/me', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
     await page.route('**/books/**', async (route) => {
-      if (!route.request().url().includes(':3001/')) {
+      if (route.request().resourceType() === 'document') {
         await route.fallback();
         return;
       }
@@ -61,7 +75,7 @@ test.describe('book details page', () => {
     });
 
     await page.route('**/reviews/book/**', async (route) => {
-      if (!route.request().url().includes(':3001/')) {
+      if (route.request().resourceType() === 'document') {
         await route.fallback();
         return;
       }
@@ -88,7 +102,7 @@ test.describe('book details page', () => {
     let favoriteRequested = false;
 
     await page.route('**/ratings/**', async (route) => {
-      if (!route.request().url().includes(':3001/')) {
+      if (route.request().resourceType() === 'document') {
         await route.fallback();
         return;
       }
@@ -106,8 +120,16 @@ test.describe('book details page', () => {
     });
 
     await page.route('**/reading-statuses/**', async (route) => {
-      if (!route.request().url().includes(':3001/')) {
+      if (route.request().resourceType() === 'document') {
         await route.fallback();
+        return;
+      }
+      if (route.request().method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify([]),
+        });
         return;
       }
       statusRequested = true;
@@ -124,7 +146,7 @@ test.describe('book details page', () => {
     });
 
     await page.route('**/favorites/**/toggle', async (route) => {
-      if (!route.request().url().includes(':3001/')) {
+      if (route.request().resourceType() === 'document') {
         await route.fallback();
         return;
       }
@@ -141,8 +163,9 @@ test.describe('book details page', () => {
     });
 
     await page.goto(`/books/${bookId}`);
+    await expect(page.getByRole('heading', { name: 'The Pragmatic Programmer' })).toBeVisible();
 
-    await page.getByRole('button', { name: '5★' }).click();
+    await page.getByRole('button', { name: /5/ }).first().click();
     await page.getByRole('combobox').selectOption('completed');
     await page.getByRole('button', { name: 'Add to favorites' }).click();
 
@@ -155,11 +178,10 @@ test.describe('book details page', () => {
     let reviewRequested = false;
 
     await page.route('**/reviews/book/**', async (route) => {
-      if (!route.request().url().includes(':3001/')) {
+      if (route.request().resourceType() === 'document') {
         await route.fallback();
         return;
       }
-
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -168,7 +190,7 @@ test.describe('book details page', () => {
     });
 
     await page.route('**/reviews/**', async (route) => {
-      if (!route.request().url().includes(':3001/')) {
+      if (route.request().resourceType() === 'document') {
         await route.fallback();
         return;
       }

@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const basePort = new URL(baseURL).port || '3000';
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -13,9 +14,10 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'pnpm dev',
+    command: `pnpm dev --port ${basePort}`,
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    // Always boot an isolated server for e2e so PLAYWRIGHT_E2E env is guaranteed.
+    reuseExistingServer: false,
     timeout: 120_000,
     // So Server Components skip API fetch; e2e mocks only apply to browser requests.
     env: {

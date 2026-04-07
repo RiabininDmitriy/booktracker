@@ -4,6 +4,8 @@ type AuthUser = {
   id: string;
   email: string;
   name: string | null;
+  pendingEmail: string | null;
+  emailVerifiedAt: string | null;
   role: string;
   createdAt: string;
 };
@@ -22,6 +24,25 @@ type RegisterRequest = {
 type LoginRequest = {
   email: string;
   password: string;
+};
+
+type UpdateMyProfileRequest = {
+  name?: string;
+  email?: string;
+};
+
+type UpdateMyProfileResponse = {
+  user: AuthUser;
+  emailVerificationRequired: boolean;
+  emailVerificationToken: string | null;
+};
+
+type ConfirmMyEmailRequest = {
+  token: string;
+};
+
+type ConfirmMyEmailResponse = {
+  user: AuthUser;
 };
 
 export const authApi = baseApi.injectEndpoints({
@@ -60,6 +81,22 @@ export const authApi = baseApi.injectEndpoints({
       query: () => '/auth/me',
       providesTags: ['Auth'],
     }),
+    updateMyProfile: builder.mutation<UpdateMyProfileResponse, UpdateMyProfileRequest>({
+      query: (body) => ({
+        url: '/users/me',
+        method: 'PATCH',
+        body,
+      }),
+      invalidatesTags: ['Auth'],
+    }),
+    confirmMyEmail: builder.mutation<ConfirmMyEmailResponse, ConfirmMyEmailRequest>({
+      query: (body) => ({
+        url: '/users/me/email/confirm',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Auth'],
+    }),
   }),
 });
 
@@ -69,5 +106,7 @@ export const {
   useLogoutMutation,
   useRefreshMutation,
   useMeQuery,
+  useUpdateMyProfileMutation,
+  useConfirmMyEmailMutation,
 } = authApi;
 export type { AuthResponse };

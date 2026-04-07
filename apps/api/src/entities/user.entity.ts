@@ -31,6 +31,20 @@ export class User {
   @Column({ type: 'varchar', nullable: true })
   name: string | null;
 
+  @Column({ type: 'varchar', length: 255, name: 'pending_email', nullable: true })
+  pendingEmail: string | null;
+
+  @Column({
+    type: 'varchar',
+    length: 255,
+    name: 'email_verification_token',
+    nullable: true,
+  })
+  emailVerificationToken: string | null;
+
+  @Column({ type: 'timestamp', name: 'email_verified_at', nullable: true })
+  emailVerifiedAt: Date | null;
+
   @Column({
     type: 'enum',
     enum: UserRole,

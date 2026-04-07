@@ -104,15 +104,19 @@ export class AuthController {
   }
 
   private toAuthResponse(accessToken: string, user: RequestUser): AuthResponseDto {
+    const responseUser: AuthResponseDto['user'] = {
+      id: user.id,
+      email: user.email,
+      name: user.name ?? null,
+      pendingEmail: user.pendingEmail ?? null,
+      emailVerifiedAt: user.emailVerifiedAt ?? null,
+      role: user.role,
+      createdAt: user.createdAt,
+    };
+
     return {
       accessToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        createdAt: user.createdAt,
-      },
+      user: responseUser,
     };
   }
 }

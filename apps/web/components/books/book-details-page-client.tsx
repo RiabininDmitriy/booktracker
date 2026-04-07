@@ -1,7 +1,7 @@
 'use client';
 
 import type { FormEvent } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 import { BookDetailsHero } from '@/components/books/book-details-hero';
@@ -62,18 +62,29 @@ export function BookDetailsPageClient({ bookId }: BookDetailsPageClientProps) {
   );
 
   const ratingStorageKey = `book-rating:${bookId}`;
-  const storedRating = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    const rawRating = window.localStorage.getItem(ratingStorageKey);
-    if (!rawRating) return null;
+  const [storedRating, setStoredRating] = useState<number | null>(null);
 
-    const parsedRating = Number(rawRating);
-    if (Number.isFinite(parsedRating) && parsedRating >= 1 && parsedRating <= 5) {
-      return parsedRating;
-    }
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      const rawRating = window.localStorage.getItem(ratingStorageKey);
+      if (!rawRating) {
+        setStoredRating(null);
+        return;
+      }
 
-    window.localStorage.removeItem(ratingStorageKey);
-    return null;
+      const parsedRating = Number(rawRating);
+      if (Number.isFinite(parsedRating) && parsedRating >= 1 && parsedRating <= 5) {
+        setStoredRating(parsedRating);
+        return;
+      }
+
+      window.localStorage.removeItem(ratingStorageKey);
+      setStoredRating(null);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [ratingStorageKey]);
 
   const selectedRating = localRating ?? storedRating;
@@ -91,7 +102,7 @@ export function BookDetailsPageClient({ bookId }: BookDetailsPageClientProps) {
     const isIntegerRating = Math.abs(book.avgRating - roundedRating) < Number.EPSILON;
     return isIntegerRating && roundedRating >= 1 && roundedRating <= 5 ? roundedRating : null;
   }, [book?.avgRating, selectedRating]);
-  const effectiveStatus = localStatus ?? persistedStatus ?? 'planned';
+  const effectiveStatus = localStatus ?? persistedStatus;
   const hasMyReview = Boolean(
     currentUserId && reviews?.some((review) => review.userId === currentUserId)
   );
@@ -115,13 +126,13 @@ export function BookDetailsPageClient({ bookId }: BookDetailsPageClientProps) {
   };
 
   const handleStatus = async (status: ReadingStatus) => {
-    if (readingStatusOrder[status] < readingStatusOrder[effectiveStatus]) {
+    if (effectiveStatus && readingStatusOrder[status] < readingStatusOrder[effectiveStatus]) {
       setFeedback('Status can only move forward: planned -> reading -> completed.');
       return;
     }
 
     const hasLocalStatus = localStatus !== null;
-    if (hasLocalStatus && status === effectiveStatus) {
+    if (effectiveStatus && hasLocalStatus && status === effectiveStatus) {
       return;
     }
 

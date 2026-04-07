@@ -33,17 +33,57 @@ const pageTwoItems: CatalogItem[] = [
 ];
 
 test.describe('catalog page', () => {
+  let isAuthenticated = false;
+
+  test.beforeEach(async ({ page }) => {
+    isAuthenticated = false;
+
+    await page.route('**/auth/me', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+      if (!isAuthenticated) {
+        await route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({}),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'user-1',
+          email: 'qa@example.com',
+          name: 'QA',
+          pendingEmail: null,
+          emailVerifiedAt: '2026-01-01T00:00:00.000Z',
+          role: 'user',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        }),
+      });
+    });
+  });
+
   test('redirects guest to sign-in from catalog', async ({ page }) => {
     await page.goto('/catalog');
     await expect(page).toHaveURL(/\/sign-in\?next=%2Fcatalog/);
   });
 
   test('renders catalog items for authenticated user', async ({ context, page }) => {
+    isAuthenticated = true;
     await context.addCookies([
       { name: 'access_token', value: 'token', url: 'http://localhost:3000' },
     ]);
 
     await page.route('**/books**', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -64,12 +104,17 @@ test.describe('catalog page', () => {
   });
 
   test('applies filters and updates query params', async ({ context, page }) => {
+    isAuthenticated = true;
     await context.addCookies([
       { name: 'access_token', value: 'token', url: 'http://localhost:3000' },
     ]);
 
     let booksRequestUrl = '';
     await page.route('**/books**', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
       booksRequestUrl = route.request().url();
       await route.fulfill({
         status: 200,
@@ -96,11 +141,16 @@ test.describe('catalog page', () => {
   });
 
   test('supports next/previous pagination controls', async ({ context, page }) => {
+    isAuthenticated = true;
     await context.addCookies([
       { name: 'access_token', value: 'token', url: 'http://localhost:3000' },
     ]);
 
     await page.route('**/books**', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
       const requestUrl = new URL(route.request().url());
       const requestPage = requestUrl.searchParams.get('page') ?? '1';
       const response =
@@ -129,11 +179,16 @@ test.describe('catalog page', () => {
   });
 
   test('opens book details when card is clicked', async ({ context, page }) => {
+    isAuthenticated = true;
     await context.addCookies([
       { name: 'access_token', value: 'token', url: 'http://localhost:3000' },
     ]);
 
     await page.route('**/books?**', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -147,7 +202,11 @@ test.describe('catalog page', () => {
       });
     });
 
-    await page.route('**://localhost:3001/books/1', async (route) => {
+    await page.route('**/books/1', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -158,7 +217,11 @@ test.describe('catalog page', () => {
       });
     });
 
-    await page.route('**://localhost:3001/reviews/book/1', async (route) => {
+    await page.route('**/reviews/book/1', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
       await route.fulfill({
         status: 200,
         contentType: 'application/json',

@@ -19,7 +19,7 @@ type BookDetailsHeroProps = {
   selectedRating: number | null;
   reviewsCountLabel: string;
   isFavorite: boolean;
-  effectiveStatus: ReadingStatus;
+  effectiveStatus: ReadingStatus | null;
   feedback: string | null;
   isSavingStatus: boolean;
   isSavingRating: boolean;
@@ -71,7 +71,7 @@ export function BookDetailsHero({
                 My reading status
               </p>
               <Select
-                value={effectiveStatus}
+                value={effectiveStatus ?? ''}
                 onChange={(event) => {
                   const selectedStatus = event.target.value;
                   if (!selectedStatus) return;
@@ -79,6 +79,7 @@ export function BookDetailsHero({
                 }}
                 disabled={isSavingStatus}
               >
+                <option value="">Choose status</option>
                 {readingStatusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}

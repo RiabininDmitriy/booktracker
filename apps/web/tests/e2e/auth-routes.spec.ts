@@ -4,23 +4,58 @@ const authUser = {
   id: 'user-1',
   email: 'admin@gmail.com',
   name: 'Admin',
-  role: 'ADMIN',
+  pendingEmail: null,
+  emailVerifiedAt: '2026-01-01T00:00:00.000Z',
+  role: 'admin',
   createdAt: '2026-01-01T00:00:00.000Z',
 };
 
 const authResponse = {
+  accessToken: 'access-token-123',
   user: authUser,
 };
 
 test.describe('auth and route protection', () => {
+  let isAuthenticated = false;
+
+  test.beforeEach(async ({ page }) => {
+    isAuthenticated = false;
+
+    await page.route('**/auth/me', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+
+      if (!isAuthenticated) {
+        await route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({}),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(authUser),
+      });
+    });
+  });
+
   test('redirects guest from /dashboard to /sign-in', async ({ page }) => {
     await page.goto('/dashboard');
-
     await expect(page).toHaveURL(/\/sign-in\?next=%2Fdashboard/);
   });
 
   test('signs in and redirects to dashboard', async ({ page }) => {
     await page.route('**/auth/login', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+      isAuthenticated = true;
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -50,6 +85,11 @@ test.describe('auth and route protection', () => {
 
   test('signs up and redirects to dashboard', async ({ page }) => {
     await page.route('**/auth/register', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+      isAuthenticated = true;
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
@@ -96,6 +136,7 @@ test.describe('auth and route protection', () => {
   });
 
   test('signs out from my account and blocks dashboard access again', async ({ context, page }) => {
+    isAuthenticated = true;
     await context.addCookies([
       {
         name: 'access_token',
@@ -105,6 +146,11 @@ test.describe('auth and route protection', () => {
     ]);
 
     await page.route('**/auth/logout', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+      isAuthenticated = false;
       await route.fulfill({
         status: 200,
         headers: {

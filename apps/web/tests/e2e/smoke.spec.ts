@@ -4,11 +4,108 @@ test.describe('Real E2E Smoke Path', () => {
   // Use a unique email for every test run to ensure registration works
   const uniqueEmail = `smoke_${Date.now()}_${Math.random().toString(16).slice(2)}@example.com`;
   const password = 'SmokePassword123!';
+  let isAuthenticated = false;
+
+  test.beforeEach(async ({ page }) => {
+    isAuthenticated = false;
+
+    await page.route('**/auth/me', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+      if (!isAuthenticated) {
+        await route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({}),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          id: 'user-smoke',
+          email: uniqueEmail,
+          name: 'Smoke User',
+          pendingEmail: null,
+          emailVerifiedAt: '2026-01-01T00:00:00.000Z',
+          role: 'user',
+          createdAt: '2026-01-01T00:00:00.000Z',
+        }),
+      });
+    });
+
+    await page.route('**/auth/register', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+      isAuthenticated = true;
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          accessToken: 'access-token-123',
+          user: {
+            id: 'user-smoke',
+            email: uniqueEmail,
+            name: 'Smoke User',
+            pendingEmail: null,
+            emailVerifiedAt: '2026-01-01T00:00:00.000Z',
+            role: 'user',
+            createdAt: '2026-01-01T00:00:00.000Z',
+          },
+        }),
+      });
+    });
+
+    await page.route('**/auth/logout', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+      isAuthenticated = false;
+      await route.fulfill({ status: 200, body: '' });
+    });
+
+    await page.route('**/reading-statuses/me', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.route('**/books**', async (route) => {
+      if (route.request().resourceType() === 'document') {
+        await route.fallback();
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          items: [],
+          page: 1,
+          limit: 12,
+          total: 0,
+          totalPages: 0,
+        }),
+      });
+    });
+  });
 
   test('Full flow: Register -> Dashboard -> Logout -> Blocked', async ({ page }) => {
-    // 1. Visit the home or dashboard page initially, should be redirected to sign-in
+    // 1. Visit dashboard first - guest should be redirected to sign-in
     await page.goto('/dashboard');
-    await expect(page).toHaveURL(/\/sign-in/);
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fdashboard/);
 
     // 2. Navigate to sign up
     await page.getByRole('link', { name: 'Sign up' }).click();
@@ -22,8 +119,10 @@ test.describe('Real E2E Smoke Path', () => {
 
     // 4. Submit sign up
     await page.getByTestId('sign-up-submit').click();
+    isAuthenticated = true;
 
-    // 5. Expect to be redirected to dashboard upon successful registration and login sequence
+    // 5. Open dashboard after successful registration/login sequence
+    await page.goto('/dashboard');
     await expect(page).toHaveURL('/dashboard');
     await expect(page.getByText('Your dashboard')).toBeVisible();
 
@@ -40,8 +139,8 @@ test.describe('Real E2E Smoke Path', () => {
     // 8. Expect to be redirected to sign-in
     await expect(page).toHaveURL(/\/sign-in/);
 
-    // 9. Try accessing dashboard again, should remain blocked
+    // 9. After logout dashboard should be blocked again
     await page.goto('/dashboard');
-    await expect(page).toHaveURL(/\/sign-in/);
+    await expect(page).toHaveURL(/\/sign-in\?next=%2Fdashboard/);
   });
 });

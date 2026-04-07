@@ -12,6 +12,9 @@ CREATE TABLE users (
   password_hash VARCHAR(255) NOT NULL,
   refresh_token_hash VARCHAR(255),
   name         VARCHAR(255),
+  pending_email VARCHAR(255),
+  email_verification_token VARCHAR(255),
+  email_verified_at TIMESTAMPTZ,
   role         user_role NOT NULL DEFAULT 'user',
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
